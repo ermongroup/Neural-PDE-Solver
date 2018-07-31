@@ -23,6 +23,9 @@ def set_boundary(x, boundary_conditions):
   return x
 
 def fd_step(x, boundary_conditions):
+  '''
+  One update of finite difference method.
+  '''
   x = set_boundary(x, boundary_conditions)
   # Convolution
   y = F.conv2d(x.view(1, 1, *x.size()), update_kernel.view(1, 1, 3, 3))
@@ -33,25 +36,34 @@ def fd_step(x, boundary_conditions):
   return y
 
 def calc_loss(x):
+  '''
+  Use loss kernel to calculate mean error.
+  '''
   l = F.conv2d(x.view(1, 1, *x.size()), loss_kernel.view(1, 1, 3, 3))
   loss = torch.sum(l ** 2)
   return loss
 
 def main():
-  size = 32
+  size = 128
   max_temp = 100
+  max_iters = 100000
+  error_threshold = 1.0
+
   x = np.random.rand(size, size) * max_temp
   bc = np.random.rand(4) * max_temp
   x = torch.Tensor(x)
   bc = torch.Tensor(bc)
 
   diff = []
-  for i in range(500):
+  for i in range(max_iters):
     y = fd_step(x, bc)
     diff = torch.mean(torch.abs(y - x))
-    loss = calc_loss(y)
-    print(diff.item(), loss.item())
     x = y
+    # Calculate error
+    error = calc_loss(y)
+    print('Iter {}: error {}'.format(i, error))
+    if error.item() < error_threshold:
+      break
 
   x = x.numpy()
   img = plt.imshow(x)
