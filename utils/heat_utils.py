@@ -40,7 +40,7 @@ def fd_step(x, bc):
   y = set_boundary(y, bc)
   return y
 
-def calc_error(x):
+def fd_error(x):
   '''
   Use loss kernel to calculate error.
   '''
@@ -57,7 +57,7 @@ def fd_iter(x, bc, error_threshold, max_iters=100000):
   for i in range(max_iters):
     x = fd_step(x, bc)
     # Calculate error
-    error = calc_error(x)
+    error = fd_error(x)
     largest_error = error.max().item() # largest error in the batch
     if (i + 1) % 100 == 0:
       print('Iter {}: largest error {}'.format(i+1, largest_error))
