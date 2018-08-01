@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import random
 import torch
 import torch.utils.data as data
@@ -35,17 +36,14 @@ class HeatDataset(data.Dataset):
 
     bc = self.bc[i, j]
     frames = self.data[i][j]
-    final = frames[-1]
-    print(final.shape)
-    length = frames.shape[0]
-    print(length)
+    final = frames[-1] / self.max_temp
     results = {'bc': bc, 'final': final}
 
     if self.is_train:
       # Randomly choose a frame
+      length = frames.shape[0]
       frame_idx = random.randint(0, length - 1)
       x = frames[frame_idx] / self.max_temp
-      print(x.shape)
       results['x'] = x
 
     return results
