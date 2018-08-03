@@ -20,13 +20,22 @@ if torch.cuda.is_available():
 def set_boundary(x, bc):
   '''
   x: batch_size x H x W
-  bc: batch_size x 4 x 4
+  bc: batch_size x 4
   '''
-  x[:, 0, :] = bc[:, 0:1]
-  x[:, -1, :] = bc[:, 1:2]
-  x[:, :, 0] = bc[:, 2:3]
-  x[:, :, -1] = bc[:, 3:4]
+  x[..., 0, :] = bc[..., 0:1]
+  x[..., -1, :] = bc[..., 1:2]
+  x[..., :, 0] = bc[..., 2:3]
+  x[..., :, -1] = bc[..., 3:4]
   return x
+
+def pad_boundary(x, bc):
+  '''
+  Pad and set boundary.
+  x: batch_size x H x W
+  '''
+  y = F.pad(x.unsqueeze(1), (1, 1, 1, 1)).squeeze(1)
+  y = set_boundary(y, bc)
+  return y
 
 def fd_step(x, bc):
   '''
