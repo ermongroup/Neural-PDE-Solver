@@ -9,13 +9,16 @@ import utils
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--save_dir', type=str, default='')
-parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--save_dir', type=str,
+                    default=os.path.join(os.environ['HOME'], 'slowbro/PDE/heat'))
+parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--save_every', type=int, default=100)
 parser.add_argument('--n_runs', type=int, default=100)
 # data
 parser.add_argument('--image_size', type=int, default=64)
 parser.add_argument('--max_temp', type=int, default=100)
+
+np.random.seed(666)
 
 def main(opt):
   error_threshold = 0.001 * opt.image_size * opt.image_size
@@ -28,6 +31,9 @@ def main(opt):
   for run in range(opt.n_runs):
     x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size) * opt.max_temp
     bc = boundary_conditions[run]
+    x = utils.set_boundary(x, bc)
+    frames = [x]
+
     x = torch.Tensor(x)
     bc = torch.Tensor(bc)
     if torch.cuda.is_available():
@@ -37,13 +43,12 @@ def main(opt):
     error_threshold = 0.001 * opt.image_size * opt.image_size
     max_iters = 100000
 
-    frames = []
     for i in range(max_iters):
       x = utils.fd_step(x, bc)
       error = utils.fd_error(x)
-      if i % 100 == 0:
+      if (i + 1) % 100 == 0:
         largest_error = error.max().item() # largest error in the batch
-        print('Iter {}: largest error {}'.format(i, largest_error))
+        print('Iter {}: largest error {}'.format(i + 1, largest_error))
         # Add to frames
         y = x.cpu().numpy()
         frames.append(y)
