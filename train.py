@@ -17,9 +17,10 @@ for epoch in range(opt.start_epoch, opt.n_epochs):
   model.setup(is_train=True)
   for step, data in enumerate(data_loader):
     bc, final, x = data['bc'], data['final'], data['x']
-    model.train(x, final, bc)
+    loss_dict = model.train(x, final, bc)
     if (step + 1) % opt.log_every == 0:
       print('Epoch {}, step {}'.format(epoch, step))
+      vis.add_scalar(loss_dict, epoch * len(data_loader) + step)
 
   if opt.evaluate_every >= 0 and (epoch + 1) % opt.evaluate_every == 0:
     model.setup(is_train=False)
@@ -29,6 +30,6 @@ for epoch in range(opt.start_epoch, opt.n_epochs):
     bc, final, x = data['bc'], data['final'], data['x']
     errors, fd_errors = model.evaluate(x, final, bc)
     # Plot error curves
-    img = utils.plot([{'y': errors, 'label': 'model errors'},
-                      {'y': fd_errors, 'label': 'fd errors'}])
-    vis.add_images({'errors': img}, epoch)
+    img = utils.plot([{'y': fd_errors, 'label': 'fd errors'},
+                      {'y': errors, 'label': 'model errors'}])
+    vis.add_image({'errors': img}, epoch)

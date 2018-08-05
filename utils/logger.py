@@ -49,7 +49,7 @@ class Visualizer:
       else:
         self.writer.add_scalar(tag, scalar, global_step)
 
-  def add_images(self, image_dict, global_step=None):
+  def add_image(self, image_dict, global_step=None):
     for tag, image in image_dict.items():
       self.writer.add_image(tag, image, global_step)
 

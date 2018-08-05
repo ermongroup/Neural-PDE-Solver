@@ -17,6 +17,10 @@ class HeatModel(BaseModel):
     self.optimizer = optim.Adam(self.iterator.parameters(), lr=opt.lr_init)
     self.nets['iterator'] = self.iterator
 
+    # Hyperparameters
+    if opt.is_train:
+      self.lambdas = {'gt': opt.lambda_gt}
+
   def train(self, x, gt, bc):
     '''
     x, gt: size (batch_size x image_size x image_size)
@@ -24,15 +28,26 @@ class HeatModel(BaseModel):
     x = x.cuda()
     gt = gt.cuda()
     bc = bc.cuda()
-    # One iteration
-    y = self.iter_step(x, bc)
 
-    loss = self.criterion_mse(y, gt)
+    # One iteration from x
+    y = self.iter_step(x, bc)
+    loss_x = self.criterion_mse(y, gt)
+    loss_dict = {'loss_x': loss_x.item()}
+
+    # One iteration from gt
+    if self.lambdas['gt'] > 0:
+      y_gt = self.iter_step(gt, bc)
+      loss_gt = self.criterion_mse(y_gt, gt)
+      loss_dict['loss_gt'] = loss_gt.item()
+    else:
+      loss_gt = 0
+
+    loss = (1 - self.lambdas['gt']) * loss_x + self.lambdas['gt'] * loss_gt
     self.optimizer.zero_grad()
     loss.backward()
     self.optimizer.step()
 
-    return {'loss': loss.item()}
+    return {'loss': loss_dict}
 
   def iter_step(self, x, bc):
     ''' Perform one iteration step. '''
