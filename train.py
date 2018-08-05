@@ -27,4 +27,8 @@ for epoch in range(opt.start_epoch, opt.n_epochs):
     idx = np.random.randint(len(val_dataset))
     data = val_dataset.__getitem__(idx)
     bc, final, x = data['bc'], data['final'], data['x']
-    errors = model.evaluate(x, final, bc)
+    errors, fd_errors = model.evaluate(x, final, bc)
+    # Plot error curves
+    img = utils.plot([{'y': errors, 'label': 'model errors'},
+                      {'y': fd_errors, 'label': 'fd errors'}])
+    vis.add_images({'errors': img}, epoch)

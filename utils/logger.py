@@ -50,7 +50,8 @@ class Visualizer:
         self.writer.add_scalar(tag, scalar, global_step)
 
   def add_images(self, image_dict, global_step=None):
-    raise NotImplementedError
+    for tag, image in image_dict.items():
+      self.writer.add_image(tag, image, global_step)
 
   def add_text(self, tag, text, global_step=None):
     self.writer.add_text(tag, text, global_step)
