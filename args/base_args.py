@@ -20,7 +20,7 @@ class BaseArgs:
     self.parser.add_argument('--ckpt_dir', type=str, default=os.path.join(os.environ['HOME'], 'slowbro', 'ckpt'),
                              help='the directory that contains all checkpoints')
     self.parser.add_argument('--ckpt_name', type=str, default='test', help='checkpoint name')
-    self.parser.add_argument('--log_every', type=int, default=10, help='log every x steps')
+    self.parser.add_argument('--log_every', type=int, default=20, help='log every x steps')
     self.parser.add_argument('--save_every', type=int, default=10, help='save every x epochs')
     self.parser.add_argument('--evaluate_every', type=int, default=-1, help='evaluate on val set every x epochs')
 

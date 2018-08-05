@@ -49,7 +49,8 @@ class HeatDataset(data.Dataset):
       x = frames[frame_idx] # image_size x image_size
       results['x'] = torch.Tensor(x)
     else:
-      results['x_all'] = torch.Tensor(frames) # length x image_size x image_size
+      x = frames[0] # first frame
+      results['x'] = torch.Tensor(x) # image_size x image_size
 
     return results
 

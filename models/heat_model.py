@@ -41,29 +41,29 @@ class HeatModel(BaseModel):
     y = utils.pad_boundary(y, bc)
     return y
 
-  def evaluate(self, x_all, bc, evaluate_every=100):
+  def evaluate(self, x, gt, bc, n_steps=200, evaluate_every=1):
     '''
-    x_all: size (n_frames x image_size x image_size)
+    x: size (image_size x image_size)
+    Compare fd iterations and the iterator.
     '''
-    # fd errors
-    gt = x_all[-1:, :, :]
-    diff = (x_all[:-1] - gt) ** 2
-    fd_errors = diff.mean(dim=-1).mean(dim=-1)
-    print(fd_errors.numpy())
+    bc = bc.cuda().unsqueeze(0)
+    x = x.cuda().unsqueeze(0)
+    gt = gt.cuda().unsqueeze(0)
+    starting_error = utils.l2_error(x, gt)
+
+    # fd
+    fd_errors = [starting_error]
+    x_fd = x
+    for i in range(n_steps):
+      x_fd = utils.fd_step(x_fd.detach(), bc)
+      fd_errors.append(utils.l2_error(x_fd, gt))
 
     # error of model
-    bc = bc.cuda().unsqueeze(0)
-    x = x_all[0:1, ...].cuda() # 1 x image_size x image_size
-    gt = gt.cuda() # 1 x image_size x image_size
-
-    errors = []
-    for i in range(1, x_all.size(0) - 1):
-      for j in range(evaluate_every):
-        x = self.iter_step(x.detach(), bc)
-      diff = (x - gt) ** 2
-      error = diff.mean(dim=-1).mean(dim=-1)
-      errors.append(error.item())
-    print(errors)
+    errors = [starting_error]
+    x_model = x
+    for i in range(n_steps):
+      x_model = self.iter_step(x_model.detach(), bc)
+      errors.append(utils.l2_error(x_model, gt))
     print(self.iterator.layers[0].weight)
     print(self.iterator.layers[0].bias)
-    return errors
+    return errors, fd_errors

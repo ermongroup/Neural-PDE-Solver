@@ -40,6 +40,7 @@ def pad_boundary(x, bc):
 def fd_step(x, bc):
   '''
   One update of finite difference method.
+  x: torch tensor of size (batch_size x H x W)
   '''
   x = set_boundary(x, bc)
   # Convolution
@@ -56,6 +57,16 @@ def fd_error(x):
   l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3))
   error = (l ** 2).sum(dim=2).sum(dim=2)
   return error
+
+def l2_error(x, gt):
+  '''
+  Calculate L2 error.
+  x, gt: (H x W) or (1 x H x W)
+  return a scalar loss.
+  '''
+  diff = (x - gt) ** 2
+  error = diff.mean(dim=-1).mean(dim=-1)
+  return error.item()
 
 def fd_iter(x, bc, error_threshold, max_iters=100000):
   '''

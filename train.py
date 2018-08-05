@@ -26,5 +26,5 @@ for epoch in range(opt.start_epoch, opt.n_epochs):
     # Randomly sample test data
     idx = np.random.randint(len(val_dataset))
     data = val_dataset.__getitem__(idx)
-    bc, final, x_all = data['bc'], data['final'], data['x_all']
-    errors = model.evaluate(x_all, bc)
+    bc, final, x = data['bc'], data['final'], data['x']
+    errors = model.evaluate(x, final, bc)
