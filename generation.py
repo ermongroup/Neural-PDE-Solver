@@ -21,12 +21,13 @@ parser.add_argument('--max_temp', type=int, default=100)
 np.random.seed(666)
 
 def main(opt):
+  frame_dir = os.path.join(opt.save_dir, 'frames')
+  os.makedirs(frame_dir, exist_ok=True)
+
   error_threshold = 0.001 * opt.image_size * opt.image_size
   # shape: n_runs x batch_size x 4
   boundary_conditions = np.random.rand(opt.n_runs, opt.batch_size, 4) * opt.max_temp
   np.save(os.path.join(opt.save_dir, 'bc.npy'), boundary_conditions)
-  frame_dir = os.path.join(opt.save_dir, 'frames')
-  os.makedirs(frame_dir, exist_ok=True)
 
   for run in range(opt.n_runs):
     x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size) * opt.max_temp
