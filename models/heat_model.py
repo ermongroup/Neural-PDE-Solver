@@ -13,12 +13,12 @@ class HeatModel(BaseModel):
     self.is_train = opt.is_train
 
     self.iterator = Iterator().cuda()
-    self.criterion_mse = nn.MSELoss().cuda()
-    self.optimizer = optim.Adam(self.iterator.parameters(), lr=opt.lr_init)
     self.nets['iterator'] = self.iterator
 
-    # Hyperparameters
     if opt.is_train:
+      self.criterion_mse = nn.MSELoss().cuda()
+      self.optimizer = optim.Adam(self.iterator.parameters(), lr=opt.lr_init)
+      # Hyperparameters
       self.lambdas = {'gt': opt.lambda_gt}
 
   def train(self, x, gt, bc):
