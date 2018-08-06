@@ -5,6 +5,15 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from PIL import Image
 
+def to_numpy(array):
+  '''
+  array: numpy array or torch Tensor
+  '''
+  if isinstance(array, np.ndarray):
+    return array
+  elif isinstance(array, torch.Tensor):
+    return array.cpu().numpy()
+
 def prompt_yes_no(question):
   i = input(question + ' [y/n]: ')
   if len(i) > 0 and (i[0] == 'y' or i[0] == 'Y'):
@@ -21,20 +30,33 @@ def yellow(string):
 def red(string):
   return '\033[91m'+string+'\033[0m'
 
-def plot(data_list):
+def sample_batch(dataset, batch_size):
   '''
-  data: A list of dictionaries.
-  return: numpy array of image
+  dataset: torch.utils.data.Dataset
+  '''
+  indices = np.random.randint(len(dataset), size=batch_size)
+  for idx in indices:
+    data = dataset.__getitem__(idx)
+
+def plot(data_list, config):
+  '''
+  data_list: A list of dictionaries.
+  config: plot configurations.
+  return: numpy array of image, size (H x W x 3)
   '''
   for data in data_list:
-    y = data['y']
+    y = to_numpy(data['y'])
     x = np.arange(len(y))
     plt.plot(x, y, label=data['label'])
-  plt.xlabel('iterations')
+  plt.xlabel(config['title'])
+  if 'ylim' in config:
+    plt.ylim(config['ylim'])
   plt.legend()
   plt.savefig('tmp.png')
   plt.close()
   # Read in tmp.png
-  img = np.array(Image.open('tmp.png')) # H x W x 4
-#  img = img[:, :, :3].transpose((2, 0, 1)) / 255 # 3 x H x W
-  return img
+  img = Image.open('tmp.png')
+  if 'image_size' in config:
+    img = img.resize(config['image_size'])
+  img = np.array(img) # H x W x 4
+  return img[:, :, :3]

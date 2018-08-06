@@ -9,6 +9,11 @@ def get_data_loader(opt):
   else:
     raise NotImplementedError
 
-  dloader = data.DataLoader(dset, batch_size=opt.batch_size, shuffle=opt.is_train,
-                            num_workers=opt.n_workers, pin_memory=True)
+  if opt.is_train:
+    dloader = data.DataLoader(dset, batch_size=opt.batch_size, shuffle=opt.is_train,
+                              num_workers=opt.n_workers, pin_memory=True)
+  else:
+    # Random sampler
+    sampler = data.RandomSampler(dset)
+    dloader = data.DataLoader(dset, batch_size=opt.batch_size, sampler=sampler)
   return dloader

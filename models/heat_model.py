@@ -56,29 +56,33 @@ class HeatModel(BaseModel):
     y = utils.pad_boundary(y, bc)
     return y
 
-  def evaluate(self, x, gt, bc, n_steps=200, evaluate_every=1):
+  def evaluate(self, x, gt, bc, n_steps=200):
     '''
-    x: size (image_size x image_size)
-    Compare fd iterations and the iterator.
+    x, gt: size (batch_size x image_size x image_size)
+    Run fd and our iterator for n_steps iterations, and calculate errors.
+    Return errors: size (batch_size x (n_steps + 1)).
     '''
-    bc = bc.cuda().unsqueeze(0)
-    x = x.cuda().unsqueeze(0)
-    gt = gt.cuda().unsqueeze(0)
-    starting_error = utils.l2_error(x, gt)
+    bc = bc.cuda()
+    x = x.cuda()
+    gt = gt.cuda()
+    starting_error = utils.l2_error(x, gt).cpu()
 
     # fd
     fd_errors = [starting_error]
-    x_fd = x
+    x_fd = x.detach()
     for i in range(n_steps):
-      x_fd = utils.fd_step(x_fd.detach(), bc)
-      fd_errors.append(utils.l2_error(x_fd, gt))
+      x_fd = utils.fd_step(x_fd, bc).detach()
+      fd_errors.append(utils.l2_error(x_fd, gt).cpu())
+    fd_errors = torch.stack(fd_errors, dim=1)
 
     # error of model
     errors = [starting_error]
-    x_model = x
+    x_model = x.detach()
     for i in range(n_steps):
-      x_model = self.iter_step(x_model.detach(), bc)
-      errors.append(utils.l2_error(x_model, gt))
-    print(self.iterator.layers[0].weight)
-    print(self.iterator.layers[0].bias)
+      x_model = self.iter_step(x_model, bc).detach()
+      errors.append(utils.l2_error(x_model, gt).cpu())
+    errors = torch.stack(errors, dim=1)
+
+    print('Kernel:', self.iterator.layers[0].weight.data)
+    print('Bias:', self.iterator.layers[0].bias.data)
     return errors, fd_errors

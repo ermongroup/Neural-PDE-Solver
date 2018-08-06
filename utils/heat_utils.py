@@ -61,12 +61,12 @@ def fd_error(x):
 def l2_error(x, gt):
   '''
   Calculate L2 error.
-  x, gt: (H x W) or (1 x H x W)
+  x, gt: (H x W) or (batch_size x H x W)
   return a scalar loss.
   '''
   diff = (x - gt) ** 2
   error = diff.mean(dim=-1).mean(dim=-1)
-  return error.item()
+  return error
 
 def fd_iter(x, bc, error_threshold, max_iters=100000):
   '''
