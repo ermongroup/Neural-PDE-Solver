@@ -4,7 +4,10 @@ from .heat_data import HeatDataset
 
 def get_dataset(opt):
   if opt.dset_name == 'heat':
-    dset = HeatDataset(opt.dset_path, opt.is_train, opt.max_temp)
+    if opt.is_train:
+      dset = HeatDataset(opt.dset_path, opt.is_train, opt.max_temp, opt.random_start)
+    else:
+      dset = HeatDataset(opt.dset_path, opt.is_train, opt.max_temp, False)
   else:
     raise NotImplementedError
   return dset
