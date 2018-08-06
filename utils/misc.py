@@ -30,14 +30,6 @@ def yellow(string):
 def red(string):
   return '\033[91m'+string+'\033[0m'
 
-def sample_batch(dataset, batch_size):
-  '''
-  dataset: torch.utils.data.Dataset
-  '''
-  indices = np.random.randint(len(dataset), size=batch_size)
-  for idx in indices:
-    data = dataset.__getitem__(idx)
-
 def plot(data_list, config):
   '''
   data_list: A list of dictionaries.
