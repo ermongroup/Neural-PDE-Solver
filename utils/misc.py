@@ -36,6 +36,7 @@ def plot(data_list, config):
   config: plot configurations.
   return: numpy array of image, size (H x W x 3)
   '''
+  fig = plt.figure()
   for data in data_list:
     y = to_numpy(data['y'])
     x = np.arange(len(y))
@@ -44,11 +45,15 @@ def plot(data_list, config):
   if 'ylim' in config:
     plt.ylim(config['ylim'])
   plt.legend()
-  plt.savefig('tmp.png')
+
+  # Plot image to numpy array
+  fig.canvas.draw()
   plt.close()
-  # Read in tmp.png
-  img = Image.open('tmp.png')
+  w, h = fig.canvas.get_width_height()
+  data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+  data = data.reshape((h, w, 3))
+  img = Image.fromarray(data)
   if 'image_size' in config:
     img = img.resize(config['image_size'])
-  img = np.array(img) # H x W x 4
-  return img[:, :, :3]
+  img = np.array(img) # H x W x 3
+  return img
