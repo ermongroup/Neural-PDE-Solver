@@ -16,3 +16,4 @@ class TrainArgs(BaseArgs):
 
     # Hyperparameters
     self.parser.add_argument('--lambda_gt', type=float, default=0)
+    self.parser.add_argument('--max_iter_steps', type=int, default=1)

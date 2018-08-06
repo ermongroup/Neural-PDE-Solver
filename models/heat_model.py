@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -19,6 +20,7 @@ class HeatModel(BaseModel):
       self.criterion_mse = nn.MSELoss().cuda()
       self.optimizer = optim.Adam(self.iterator.parameters(), lr=opt.lr_init)
       # Hyperparameters
+      self.max_iter_steps = opt.max_iter_steps
       self.lambdas = {'gt': opt.lambda_gt}
 
   def train(self, x, gt, bc):
@@ -29,8 +31,13 @@ class HeatModel(BaseModel):
     gt = gt.cuda()
     bc = bc.cuda()
 
-    # One iteration from x
-    y = self.iter_step(x, bc)
+    N = np.random.randint(1, self.max_iter_steps + 1)
+    # N-1 iterations from x
+    y = x.detach()
+    for i in range(N - 1):
+      y = self.iter_step(y, bc).detach()
+    # Train one iteration (no detach)
+    y = self.iter_step(y, bc)
     loss_x = self.criterion_mse(y, gt)
     loss_dict = {'loss_x': loss_x.item()}
 

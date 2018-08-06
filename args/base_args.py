@@ -33,6 +33,9 @@ class BaseArgs:
     # for convenience
     opt.is_train, opt.split = self.is_train, self.split
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name)
+    if opt.is_train:
+      opt.ckpt_name = '{}_iter{}_gt{}_epoch{}'.format(opt.ckpt_name, opt.max_iter_steps,
+                                                      opt.lambda_gt, opt.n_epochs)
     opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, opt.ckpt_name)
 
     log = ['Arguments: ']
