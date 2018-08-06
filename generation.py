@@ -3,7 +3,6 @@ import numpy as np
 import os
 import torch
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
 
 import utils
 
@@ -12,8 +11,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--save_dir', type=str,
                     default=os.path.join(os.environ['HOME'], 'slowbro/PDE/heat'))
 parser.add_argument('--batch_size', type=int, default=16)
-parser.add_argument('--save_every', type=int, default=100)
-parser.add_argument('--n_runs', type=int, default=100)
+parser.add_argument('--save_every', type=int, default=5)
+parser.add_argument('--n_frames', type=int, default=50)
+parser.add_argument('--n_runs', type=int, default=200)
 # data
 parser.add_argument('--image_size', type=int, default=64)
 parser.add_argument('--max_temp', type=int, default=100)
@@ -24,7 +24,6 @@ def main(opt):
   frame_dir = os.path.join(opt.save_dir, 'frames')
   os.makedirs(frame_dir, exist_ok=True)
 
-  error_threshold = 0.001 * opt.image_size * opt.image_size
   # shape: n_runs x batch_size x 4
   boundary_conditions = np.random.rand(opt.n_runs, opt.batch_size, 4) * opt.max_temp
   np.save(os.path.join(opt.save_dir, 'bc.npy'), boundary_conditions)
@@ -41,22 +40,29 @@ def main(opt):
       x = x.cuda()
       bc = bc.cuda()
 
+    # Get n_frames frames
+    for i in range(opt.n_frames - 1):
+      for j in range(opt.save_every):
+        x = utils.fd_step(x, bc)
+      y = x.cpu().numpy()
+      frames.append(y)
+
+    # Iterate until ground truth
     error_threshold = 0.001 * opt.image_size * opt.image_size
     max_iters = 100000
-
     for i in range(max_iters):
       x = utils.fd_step(x, bc)
       error = utils.fd_error(x)
       if (i + 1) % 100 == 0:
         largest_error = error.max().item() # largest error in the batch
-        print('Iter {}: largest error {}'.format(i + 1, largest_error))
-        # Add to frames
-        y = x.cpu().numpy()
-        frames.append(y)
+        print('Iter {}: largest error {}'.format(opt.n_frames * opt.save_every + i + 1, largest_error))
         if largest_error < error_threshold:
           break
-
-    frames = np.stack(frames, axis=1) # batch_size x n_iters x image_size x image_size
+    # Add ground truth to frames
+    y = x.cpu().numpy()
+    frames.append(y)
+    assert len(frames) == opt.n_frames + 1
+    frames = np.stack(frames, axis=1) # batch_size x (n_frames + 1) x image_size x image_size
     np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), frames)
 
 
