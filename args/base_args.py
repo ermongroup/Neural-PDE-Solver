@@ -14,6 +14,7 @@ class BaseArgs:
     # data
     self.parser.add_argument('--dset_dir', type=str, default=os.path.join(os.environ['HOME'], 'slowbro', 'PDE'))
     self.parser.add_argument('--dset_name', type=str, default='heat')
+    self.parser.add_argument('--image_size', type=int, default=64)
     self.parser.add_argument('--batch_size', type=int, default=4)
 
     # ckpt and logging
@@ -26,17 +27,20 @@ class BaseArgs:
 
     # specific
     self.parser.add_argument('--max_temp', type=int, default=100)
+    self.parser.add_argument('--n_evaluation_steps', type=int, default=100,
+                             help='number of iterations to run when evaluating')
 
   def parse(self):
     opt = self.parser.parse_args()
 
     # for convenience
     opt.is_train, opt.split = self.is_train, self.split
-    opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name)
+    image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
+    opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:
       opt.ckpt_name = '{}_iter{}_gt{}_epoch{}'.format(opt.ckpt_name, opt.max_iter_steps,
                                                       opt.lambda_gt, opt.n_epochs)
-    opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, opt.ckpt_name)
+    opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)
 
     log = ['Arguments: ']
     for k, v in sorted(vars(opt).items()):

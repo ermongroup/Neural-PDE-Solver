@@ -34,7 +34,7 @@ def main():
       # Randomly sample test data
       data = next(iter(val_loader))
       bc, final, x = data['bc'], data['final'], data['x']
-      errors, fd_errors = model.evaluate(x, final, bc)
+      errors, fd_errors = model.evaluate(x, final, bc, opt.n_evaluation_steps)
       # Plot error curve
       images = []
       for i in range(errors.size(0)):
