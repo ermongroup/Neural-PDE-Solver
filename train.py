@@ -1,8 +1,6 @@
 import copy
 import numpy as np
 import os
-import torch
-import torchvision
 
 from data import get_data_loader, get_random_data_loader
 import utils
@@ -36,14 +34,7 @@ def main():
       bc, final, x = data['bc'], data['final'], data['x']
       errors, fd_errors = model.evaluate(x, final, bc, opt.n_evaluation_steps)
       # Plot error curve
-      images = []
-      for i in range(errors.size(0)):
-        img = utils.plot([{'y': fd_errors[i], 'label': 'fd errors'},
-                          {'y': errors[i], 'label': 'model errors'}],
-                         {'title': 'iterations', 'ylim': (0, 0.15), 'image_size': (640, 480)})
-        img = img.transpose((2, 0, 1)) / 255
-        images.append(torch.Tensor(img))
-      images = torchvision.utils.make_grid(images, nrow=errors.size(0))
+      images = model.plot_error_curves(errors, fd_errors)
       vis.add_image({'errors': images}, epoch)
 
     if (epoch + 1) % opt.save_every == 0 or epoch == opt.n_epochs - 1:

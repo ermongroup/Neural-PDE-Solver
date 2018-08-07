@@ -1,12 +1,12 @@
 #!/bin/bash
+CUDA_VISIBLE_DEVICES=0 \
 python train.py \
-  --gpus 0 \
-  --batch_size 16 \
+  --batch_size 32 \
   --evaluate_every 5 \
-  --n_epochs 400 \
-  --lr_init 1e-4 \
+  --n_epochs 200 \
+  --lr_init 1e-3 \
   --lambda_gt 0.5 \
-  --image_size 64 \
-  --max_iter_steps 50 \
-  --n_evaluation_steps 200 \
-  --ckpt_name ckpt
+  --image_size 16 \
+  --max_iter_steps 30 \
+  --n_evaluation_steps 50 \
+  --ckpt_name first

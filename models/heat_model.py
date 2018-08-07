@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torchvision
 
 from .base_model import BaseModel
 from .iterator import Iterator
@@ -93,3 +94,20 @@ class HeatModel(BaseModel):
     print('Kernel:', self.iterator.layers[0].weight.data)
     print('Bias:', self.iterator.layers[0].bias.data)
     return errors, fd_errors
+
+  def plot_error_curves(self, errors, fd_errors):
+    '''
+    Plot model and fd error curves.
+    errors, fd_errors: torch Tensor, size (batch_size x n_steps)
+    Return images: torch Tensor, size (3 x H x (W * batch_size))
+    '''
+    W, H = 640, 480
+    images = []
+    for i in range(errors.size(0)):
+      img = utils.plot([{'y': fd_errors[i], 'label': 'fd errors'},
+                        {'y': errors[i], 'label': 'model errors'}],
+                       {'title': 'iterations', 'ylim': (0, 0.15), 'image_size': (W, H)})
+      img = img.transpose((2, 0, 1)) / 255 # 3 x H x W
+      images.append(torch.Tensor(img))
+    images = torchvision.utils.make_grid(images, nrow=errors.size(0))
+    return images

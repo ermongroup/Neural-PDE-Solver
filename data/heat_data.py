@@ -9,7 +9,7 @@ def make_dataset(root, is_train, max_temp, random_start):
   bc = np.load(os.path.join(root, 'bc.npy'))
   bc /= max_temp
   total_instances = len(bc)
-  split = int(0.8 * len(bc)) # 8-2 split
+  split = int(0.9 * len(bc)) # 9-1 split
   if is_train:
     bc = bc[:split]
     indices = np.arange(split)

@@ -11,7 +11,7 @@ from .statistics import Statistics
 def build(is_train, tb_dir=None):
   opt, log = args.TrainArgs().parse() if is_train else args.TestArgs().parse()
 
-  os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus
+  #os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus
   os.makedirs(opt.ckpt_path, exist_ok=True)
 
   # Set seed

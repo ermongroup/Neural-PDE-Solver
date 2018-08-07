@@ -9,7 +9,6 @@ class BaseArgs:
 
     # hardware
     self.parser.add_argument('--n_workers', type=int, default=8, help='number of threads')
-    self.parser.add_argument('--gpus', type=str, default='0', help='visible GPU ids, separated by comma')
 
     # data
     self.parser.add_argument('--dset_dir', type=str, default=os.path.join(os.environ['HOME'], 'slowbro', 'PDE'))
@@ -38,8 +37,9 @@ class BaseArgs:
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:
-      opt.ckpt_name = '{}_iter{}_gt{}_epoch{}'.format(opt.ckpt_name, opt.max_iter_steps,
-                                                      opt.lambda_gt, opt.n_epochs)
+      opt.ckpt_name = '{}_iter{}_gt{}_lr{:.0e}_epoch{}'.format(\
+                          opt.ckpt_name, opt.max_iter_steps, opt.lambda_gt,
+                          opt.lr_init, opt.n_epochs)
     opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)
 
     log = ['Arguments: ']
