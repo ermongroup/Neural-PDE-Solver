@@ -91,8 +91,8 @@ class HeatModel(BaseModel):
       errors.append(utils.l2_error(x_model, gt).cpu())
     errors = torch.stack(errors, dim=1)
 
-    print('Kernel:', self.iterator.layers[0].weight.data)
-    print('Bias:', self.iterator.layers[0].bias.data)
+#    print('Kernel:', self.iterator.layers[0].weight.data)
+#    print('Bias:', self.iterator.layers[0].bias.data)
     return errors, fd_errors
 
   def plot_error_curves(self, errors, fd_errors):
