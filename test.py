@@ -23,11 +23,13 @@ def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')
   data_loader = data.get_data_loader(opt)
   model = HeatModel(opt)
+  logger.print('Loading data from {}'.format(opt.dset_path))
 
   for epoch in opt.which_epochs:
     if epoch < 0:
       # Pick last epoch
       checkpoints = glob.glob(os.path.join(opt.ckpt_path, 'net_*.pth'))
+      assert len(checkpoints) > 0
       epochs = [int(path[:-4].split('_')[-1]) for path in checkpoints]
       epoch = sorted(epochs)[-1]
 

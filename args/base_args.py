@@ -17,12 +17,17 @@ class BaseArgs:
     self.parser.add_argument('--batch_size', type=int, default=4)
 
     # ckpt and logging
-    self.parser.add_argument('--ckpt_dir', type=str, default=os.path.join(os.environ['HOME'], 'slowbro', 'ckpt'),
+    self.parser.add_argument('--ckpt_dir', type=str,
+                             default=os.path.join(os.environ['HOME'], 'slowbro', 'ckpt'),
                              help='the directory that contains all checkpoints')
-    self.parser.add_argument('--ckpt_name', type=str, default='test', help='checkpoint name')
+    self.parser.add_argument('--ckpt_name', type=str, default='test',
+                             help='checkpoint name')
+    self.parser.add_argument('--load_ckpt_path', type=str, default='',
+                             help='checkpoint path to load trained model')
     self.parser.add_argument('--log_every', type=int, default=20, help='log every x steps')
     self.parser.add_argument('--save_every', type=int, default=10, help='save every x epochs')
-    self.parser.add_argument('--evaluate_every', type=int, default=-1, help='evaluate on val set every x epochs')
+    self.parser.add_argument('--evaluate_every', type=int, default=-1,
+                             help='evaluate on val set every x epochs')
 
     # specific
     self.parser.add_argument('--max_temp', type=int, default=100)
@@ -40,7 +45,10 @@ class BaseArgs:
       opt.ckpt_name = '{}_iter{}_gt{}_lr{:.0e}_epoch{}'.format(\
                           opt.ckpt_name, opt.max_iter_steps, opt.lambda_gt,
                           opt.lr_init, opt.n_epochs)
-    opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)
+      opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)
+    else:
+      # Note: for testing, dset and ckpt image size might be different.
+      opt.ckpt_path = opt.load_ckpt_path
 
     log = ['Arguments: ']
     for k, v in sorted(vars(opt).items()):
