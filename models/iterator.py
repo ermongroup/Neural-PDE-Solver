@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 
 class Iterator(nn.Module):
-  def __init__(self):
+  def __init__(self, activation):
     super(Iterator, self).__init__()
     self.layers = nn.Sequential(
-                      nn.Conv2d(1, 1, 3),
-                      nn.Sigmoid())
+                      nn.Conv2d(1, 1, 3))
+    self.activation = activation
 
     # Initialize
     initial_weight = torch.Tensor([[0, 1, 0],
@@ -22,4 +22,10 @@ class Iterator(nn.Module):
     '''
     batch_size, n_channels, _, _ = x.size()
     y = self.layers(x)
+    if self.activation == 'sigmoid':
+      y = torch.sigmoid(y)
+    elif self.activation == 'clamp':
+      y = y.clamp(0, 1)
+    else:
+      raise NotImplementedError
     return y

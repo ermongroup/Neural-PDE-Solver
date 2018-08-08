@@ -22,7 +22,10 @@ def evaluate(opt, model, data_loader, vis=None):
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')
   data_loader = data.get_data_loader(opt)
-  model = HeatModel(opt)
+  # Load model opt
+  model_opt = np.load(os.path.join(opt.ckpt_path, 'opt.npy')).item()
+  model_opt.is_train = False
+  model = HeatModel(model_opt)
   logger.print('Loading data from {}'.format(opt.dset_path))
 
   for epoch in opt.which_epochs:

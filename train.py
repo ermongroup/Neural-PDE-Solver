@@ -8,8 +8,9 @@ from models.heat_model import HeatModel
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=True, tb_dir='tb_train')
+  np.save(os.path.join(opt.ckpt_path, 'opt.npy'), opt)
   data_loader = get_data_loader(opt)
-# Validation
+  # Validation
   val_opt = copy.deepcopy(opt)
   val_opt.is_train = False
   val_opt.batch_size = 4

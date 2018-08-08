@@ -14,7 +14,7 @@ class HeatModel(BaseModel):
     super(HeatModel, self).__init__()
     self.is_train = opt.is_train
 
-    self.iterator = Iterator().cuda()
+    self.iterator = Iterator(opt.activation).cuda()
     self.nets['iterator'] = self.iterator
 
     if opt.is_train:
