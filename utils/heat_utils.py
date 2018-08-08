@@ -50,12 +50,18 @@ def fd_step(x, bc):
   y = set_boundary(y, bc)
   return y
 
-def fd_error(x):
+def fd_error(x, aggregate='max'):
   '''
-  Use loss kernel to calculate error.
+  Use loss kernel to calculate absolute error.
   '''
   l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3))
-  error = (l ** 2).sum(dim=2).sum(dim=2)
+  l = l.view(l.size(0), -1)
+  if aggregate == 'max':
+    error = torch.abs(l).max(dim=1)[0]
+  elif aggregate == 'mean':
+    error = torch.abs(l).mean(dim=1)
+  else:
+    raise NotImplementedError
   return error
 
 def l2_error(x, gt):
