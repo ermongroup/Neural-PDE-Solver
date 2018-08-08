@@ -18,6 +18,9 @@ def evaluate(opt, model, data_loader, vis=None):
       vis.add_image({'errors': images}, step)
     if (step + 1) % opt.log_every == 0:
       print('Step {}'.format(step))
+    if (step + 1) == 20:
+      # Hard code for now
+      break
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')

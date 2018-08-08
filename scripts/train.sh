@@ -8,6 +8,7 @@ python train.py \
   --lambda_gt 0.5 \
   --image_size 16 \
   --max_iter_steps 30 \
+  --max_iter_steps_from_gt 1 \
   --n_evaluation_steps 100 \
   --activation clamp \
   --ckpt_name clamp

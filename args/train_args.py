@@ -19,5 +19,6 @@ class TrainArgs(BaseArgs):
     # Hyperparameters
     self.parser.add_argument('--lambda_gt', type=float, default=0)
     self.parser.add_argument('--max_iter_steps', type=int, default=1)
+    self.parser.add_argument('--max_iter_steps_from_gt', type=int, default=1)
     self.parser.add_argument('--random_start', type=int, default=0,
                              help='if True, start from randomly selected frame')

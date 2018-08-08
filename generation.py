@@ -52,7 +52,7 @@ def main(opt):
 
     # Iterate until ground truth
     error_threshold = 0.001
-    max_iters = 10000
+    max_iters = 20000
     for i in range(max_iters):
       x = utils.fd_step(x, bc)
       error = utils.fd_error(x)

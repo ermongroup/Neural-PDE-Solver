@@ -22,6 +22,7 @@ class HeatModel(BaseModel):
       self.optimizer = optim.Adam(self.iterator.parameters(), lr=opt.lr_init)
       # Hyperparameters
       self.max_iter_steps = opt.max_iter_steps
+      self.max_iter_steps_from_gt = opt.max_iter_steps_from_gt
       self.lambdas = {'gt': opt.lambda_gt}
 
   def train(self, x, gt, bc):
@@ -37,14 +38,18 @@ class HeatModel(BaseModel):
     y = x.detach()
     for i in range(N - 1):
       y = self.iter_step(y, bc).detach()
-    # Train one iteration (no detach)
+    # One more iteration (no detach)
     y = self.iter_step(y, bc)
     loss_x = self.criterion_mse(y, gt)
     loss_dict = {'loss_x': loss_x.item()}
 
-    # One iteration from gt
     if self.lambdas['gt'] > 0:
-      y_gt = self.iter_step(gt, bc)
+      M = np.random.randint(1, self.max_iter_steps_from_gt + 1)
+      y_gt = gt.detach()
+      for i in range(M - 1):
+        y_gt = self.iter_step(y_gt, bc).detach()
+      # One more iteration
+      y_gt = self.iter_step(y_gt, bc)
       loss_gt = self.criterion_mse(y_gt, gt)
       loss_dict['loss_gt'] = loss_gt.item()
     else:
