@@ -5,7 +5,7 @@ import torch
 import torch.utils.data as data
 
 
-def make_dataset(root, is_train, max_temp, random_start):
+def make_dataset(root, is_train, max_temp, random_start, zero_init):
   bc = np.load(os.path.join(root, 'bc.npy'))
   bc /= max_temp
   total_instances = len(bc)
@@ -23,15 +23,20 @@ def make_dataset(root, is_train, max_temp, random_start):
     path = os.path.join(root, 'frames', '{:04d}.npy'.format(i))
     frames = np.load(path) # batch_size x length x image_size x image_size
     if not random_start:
+      first_frame = frames[:, 0]
+      if zero_init:
+        first_frame[:, 1:-1, 1:-1] = 0
       # Take first and last frame only, (batch_size x 2 x image_size x image_size)
-      frames = np.stack([frames[:, 0], frames[:, -1]], axis=1)
+      frames = np.stack([first_frame, frames[:, -1]], axis=1)
     frames /= max_temp # Normalize
     data.append(frames)
   return bc, data
 
 class HeatDataset(data.Dataset):
-  def __init__(self, root, is_train, max_temp, random_start):
-    self.bc, self.data = make_dataset(root, is_train, max_temp, random_start)
+  def __init__(self, root, is_train, max_temp, random_start, zero_init):
+    if random_start and zero_init:
+      print('Random start, ignoring zero_init')
+    self.bc, self.data = make_dataset(root, is_train, max_temp, random_start, zero_init)
 
     self.n_instances, self.batch_size, _ = self.bc.shape
     self.is_train = is_train
@@ -48,7 +53,7 @@ class HeatDataset(data.Dataset):
     if self.is_train:
       # Randomly choose a frame, except the last frame
       length = frames.shape[0]
-      frame_idx = random.randint(0, length - 1)
+      frame_idx = random.randint(0, length - 2) # inclusive
       x = frames[frame_idx] # image_size x image_size
       results['x'] = torch.Tensor(x)
     else:

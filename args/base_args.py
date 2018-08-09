@@ -13,8 +13,11 @@ class BaseArgs:
     # data
     self.parser.add_argument('--dset_dir', type=str, default=os.path.join(os.environ['HOME'], 'slowbro', 'PDE'))
     self.parser.add_argument('--dset_name', type=str, default='heat')
-    self.parser.add_argument('--image_size', type=int, default=64)
     self.parser.add_argument('--batch_size', type=int, default=4)
+    self.parser.add_argument('--image_size', type=int, default=64)
+    # Specific
+    self.parser.add_argument('--max_temp', type=int, default=100)
+    self.parser.add_argument('--zero_init', type=int, default=1)
 
     # ckpt and logging
     self.parser.add_argument('--ckpt_dir', type=str,
@@ -29,11 +32,10 @@ class BaseArgs:
     self.parser.add_argument('--evaluate_every', type=int, default=-1,
                              help='evaluate on val set every x epochs')
 
-    # specific
+    # model
     self.parser.add_argument('--iterator', type=str, default='basic',
                              choices=['basic', 'unet'],
                              help='specify iterator architecture')
-    self.parser.add_argument('--max_temp', type=int, default=100)
     self.parser.add_argument('--n_evaluation_steps', type=int, default=100,
                              help='number of iterations to run when evaluating')
     self.parser.add_argument('--activation', type=str, default='clamp',
