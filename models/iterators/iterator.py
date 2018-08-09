@@ -7,7 +7,7 @@ class Iterator(nn.Module):
   def __init__(self, act):
     super(Iterator, self).__init__()
     self.layers = nn.Sequential(
-                      nn.Conv2d(1, 1, 3))
+                      nn.Conv2d(1, 1, 3, bias=False))
     self.act = act
 
     # Initialize
@@ -15,7 +15,6 @@ class Iterator(nn.Module):
                                    [1, 0, 1],
                                    [0, 1, 0]]).view(1, 1, 3, 3) * 0.25
     self.layers[0].weight = nn.Parameter(initial_weight)
-    self.layers[0].bias.data.zero_()
 
   def activation(self, x):
     ''' Apply activation '''
