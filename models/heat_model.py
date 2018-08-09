@@ -6,7 +6,7 @@ import torch.optim as optim
 import torchvision
 
 from .base_model import BaseModel
-from .iterator import Iterator
+from .iterators import *
 import utils
 
 class HeatModel(BaseModel):
@@ -64,9 +64,8 @@ class HeatModel(BaseModel):
 
   def iter_step(self, x, bc):
     ''' Perform one iteration step. '''
-    y = self.iterator(x.unsqueeze(1))
+    y = self.iterator(x.unsqueeze(1), bc)
     y = y.squeeze(1)
-    y = utils.pad_boundary(y, bc)
     return y
 
   def evaluate(self, x, gt, bc, n_steps=200):
