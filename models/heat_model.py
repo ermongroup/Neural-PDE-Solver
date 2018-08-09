@@ -14,7 +14,12 @@ class HeatModel(BaseModel):
     super(HeatModel, self).__init__()
     self.is_train = opt.is_train
 
-    self.iterator = Iterator(opt.activation).cuda()
+    if opt.iterator == 'basic':
+      self.iterator = Iterator(opt.activation).cuda()
+    elif opt.iterator == 'unet':
+      self.iterator = UNetIterator(opt.activation).cuda()
+    else:
+      raise NotImplementedError
     self.nets['iterator'] = self.iterator
 
     if opt.is_train:

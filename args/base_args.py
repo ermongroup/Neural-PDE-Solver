@@ -30,6 +30,9 @@ class BaseArgs:
                              help='evaluate on val set every x epochs')
 
     # specific
+    self.parser.add_argument('--iterator', type=str, default='basic',
+                             choices=['basic', 'unet'],
+                             help='specify iterator architecture')
     self.parser.add_argument('--max_temp', type=int, default=100)
     self.parser.add_argument('--n_evaluation_steps', type=int, default=100,
                              help='number of iterations to run when evaluating')
@@ -44,9 +47,9 @@ class BaseArgs:
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:
-      opt.ckpt_name = '{}_iter{}_{}_gt{}_lr{:.0e}_epoch{}'.format(\
-                          opt.ckpt_name, opt.max_iter_steps, opt.max_iter_steps_from_gt,
-                          opt.lambda_gt, opt.lr_init, opt.n_epochs)
+      opt.ckpt_name = '{}_{}_iter{}_{}_gt{}_lr{:.0e}_epoch{}'.format(\
+                          opt.ckpt_name, opt.iterator, opt.max_iter_steps,
+                          opt.max_iter_steps_from_gt, opt.lambda_gt, opt.lr_init, opt.n_epochs)
       opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)
     else:
       # Note: for testing, dset and ckpt image size might be different.

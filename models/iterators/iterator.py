@@ -6,15 +6,7 @@ import utils
 class Iterator(nn.Module):
   def __init__(self, act):
     super(Iterator, self).__init__()
-    self.layers = nn.Sequential(
-                      nn.Conv2d(1, 1, 3, bias=False))
     self.act = act
-
-    # Initialize
-    initial_weight = torch.Tensor([[0, 1, 0],
-                                   [1, 0, 1],
-                                   [0, 1, 0]]).view(1, 1, 3, 3) * 0.25
-    self.layers[0].weight = nn.Parameter(initial_weight)
 
   def activation(self, x):
     ''' Apply activation '''
@@ -31,7 +23,22 @@ class Iterator(nn.Module):
     x: size (batch_size x 1 x image_size x image_size)
     return: same size
     '''
-    batch_size, n_channels, _, _ = x.size()
+    raise NotImplementedError
+
+
+class BasicIterator(Iterator):
+  def __init__(self, act):
+    super(BasicIterator, self).__init__(act)
+
+    self.layers = nn.Sequential(
+                      nn.Conv2d(1, 1, 3, bias=False))
+    # Initialize
+    initial_weight = torch.Tensor([[0, 1, 0],
+                                   [1, 0, 1],
+                                   [0, 1, 0]]).view(1, 1, 3, 3) * 0.25
+    self.layers[0].weight = nn.Parameter(initial_weight)
+
+  def forward(self, x, bc):
     y = self.layers(x)
     y = self.activation(y)
     # y.size(): batch_size x 1 x (image_size - 2) x (image_size - 2)
