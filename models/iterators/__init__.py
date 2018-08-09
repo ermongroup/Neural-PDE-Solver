@@ -1,2 +1,2 @@
-from .iterator import Iterator
+from .iterator import BasicIterator
 from .unet_iterator import UNetIterator
