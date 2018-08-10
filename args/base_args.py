@@ -49,9 +49,11 @@ class BaseArgs:
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:
-      opt.ckpt_name = '{}_{}_iter{}_{}_gt{}_lr{:.0e}_epoch{}'.format(\
-                          opt.ckpt_name, opt.iterator, opt.max_iter_steps,
-                          opt.max_iter_steps_from_gt, opt.lambda_gt, opt.lr_init, opt.n_epochs)
+      name = 'zero' if opt.zero_init else 'random'
+      opt.ckpt_name = '{}{}_{}_iter{}_{}_gt{}_lr{:.0e}'.format(\
+                          (opt.ckpt_name + '_') if opt.ckpt_name != '' else '',
+                          name, opt.iterator, opt.max_iter_steps,
+                          opt.max_iter_steps_from_gt, opt.lambda_gt, opt.lr_init)
       opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)
     else:
       # Note: for testing, dset and ckpt image size might be different.

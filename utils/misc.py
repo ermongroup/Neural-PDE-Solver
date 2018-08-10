@@ -42,8 +42,7 @@ def plot(data_list, config):
     x = np.arange(len(y))
     plt.plot(x, y, label=data['label'])
   plt.xlabel(config['title'])
-  if 'ylim' in config:
-    plt.ylim(config['ylim'])
+  plt.ylim(ymin=0)
   plt.legend()
 
   # Plot image to numpy array

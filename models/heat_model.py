@@ -115,7 +115,7 @@ class HeatModel(BaseModel):
     for i in range(errors.size(0)):
       img = utils.plot([{'y': fd_errors[i], 'label': 'fd errors'},
                         {'y': errors[i], 'label': 'model errors'}],
-                       {'title': 'iterations', 'ylim': (0, 0.15), 'image_size': (W, H)})
+                       {'title': 'iterations', 'image_size': (W, H)})
       img = img.transpose((2, 0, 1)) / 255 # 3 x H x W
       images.append(torch.Tensor(img))
     images = torchvision.utils.make_grid(images, nrow=errors.size(0))
