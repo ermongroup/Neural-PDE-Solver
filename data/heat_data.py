@@ -5,7 +5,7 @@ import torch
 import torch.utils.data as data
 
 
-def make_dataset(root, is_train, max_temp, random_start, zero_init):
+def make_dataset(root, is_train, max_temp, random_start, zero_init, data_limit):
   bc = np.load(os.path.join(root, 'bc.npy'))
   bc /= max_temp
   total_instances = len(bc)
@@ -17,6 +17,9 @@ def make_dataset(root, is_train, max_temp, random_start, zero_init):
     bc = bc[split:]
     indices = np.arange(split, total_instances)
 
+  if data_limit > 0:
+    bc = bc[:data_limit]
+    indices = indices[:data_limit]
   # bc: N x batch_size x 4
   data = []
   for i in indices:
@@ -33,10 +36,11 @@ def make_dataset(root, is_train, max_temp, random_start, zero_init):
   return bc, data
 
 class HeatDataset(data.Dataset):
-  def __init__(self, root, is_train, max_temp, random_start, zero_init):
+  def __init__(self, root, is_train, max_temp, random_start, zero_init, data_limit):
     if random_start and zero_init:
       print('Random start, ignoring zero_init')
-    self.bc, self.data = make_dataset(root, is_train, max_temp, random_start, zero_init)
+    self.bc, self.data = make_dataset(root, is_train, max_temp, random_start,
+                                      zero_init, data_limit)
 
     self.n_instances, self.batch_size, _ = self.bc.shape
     self.is_train = is_train

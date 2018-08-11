@@ -1,6 +1,9 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchvision
+
+from .misc import plot
 
 # Kernels
 update_kernel = np.array([[0, 1, 0],
@@ -90,3 +93,23 @@ def fd_iter(x, bc, error_threshold, max_iters=100000):
     if largest_error < error_threshold:
       break
   return x
+
+def plot_error_curves(results):
+  '''
+  Plot model and fd error curves.
+  results: dictionary of torch Tensors with size (batch_size x n_steps),
+           returned by model.evaluate().
+  Return images: torch Tensor, size (3 x H x (W * batch_size))
+  '''
+  W, H = 640, 480
+  images = []
+  batch_size = results['fd errors'].size(0)
+  for i in range(batch_size):
+    curves = []
+    for label in results.keys():
+      curves.append({'y': results[label][i], 'label': label})
+    img = plot(curves, config={'title': 'iterations', 'image_size': (W, H)})
+    img = img.transpose((2, 0, 1)) / 255 # 3 x H x W
+    images.append(torch.Tensor(img))
+  images = torchvision.utils.make_grid(images, nrow=batch_size)
+  return images

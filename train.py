@@ -33,9 +33,9 @@ def main():
       # Randomly sample test data
       data = next(iter(val_loader))
       bc, final, x = data['bc'], data['final'], data['x']
-      errors, fd_errors = model.evaluate(x, final, bc, opt.n_evaluation_steps)
+      error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps)
       # Plot error curve
-      images = model.plot_error_curves(errors, fd_errors)
+      images = utils.plot_error_curves(error_dict)
       vis.add_image({'errors': images}, epoch)
 
     if (epoch + 1) % opt.save_every == 0 or epoch == opt.n_epochs - 1:

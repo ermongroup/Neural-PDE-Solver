@@ -6,10 +6,10 @@ def get_dataset(opt):
   if opt.dset_name == 'heat':
     if opt.is_train:
       dset = HeatDataset(opt.dset_path, opt.is_train, opt.max_temp, opt.random_start,
-                         opt.zero_init)
+                         opt.zero_init, opt.data_limit)
     else:
       dset = HeatDataset(opt.dset_path, opt.is_train, opt.max_temp, False,
-                         opt.zero_init)
+                         opt.zero_init, opt.data_limit)
   else:
     raise NotImplementedError
   return dset

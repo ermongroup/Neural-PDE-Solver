@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torchvision
 
 from .base_model import BaseModel
 from .iterators import *
@@ -73,16 +72,17 @@ class HeatModel(BaseModel):
     y = y.squeeze(1)
     return y
 
-  def evaluate(self, x, gt, bc, n_steps=200):
+  def evaluate(self, x, gt, bc, n_steps, switch_to_fd=-1):
     '''
     x, gt: size (batch_size x image_size x image_size)
     Run fd and our iterator for n_steps iterations, and calculate errors.
-    Return errors: size (batch_size x (n_steps + 1)).
+    Return a dictionary of errors: size (batch_size x (n_steps + 1)).
     '''
     bc = bc.cuda()
     x = x.cuda()
     gt = gt.cuda()
     starting_error = utils.l2_error(x, gt).cpu()
+    results = {}
 
     # fd
     fd_errors = [starting_error]
@@ -90,7 +90,7 @@ class HeatModel(BaseModel):
     for i in range(n_steps):
       x_fd = utils.fd_step(x_fd, bc).detach()
       fd_errors.append(utils.l2_error(x_fd, gt).cpu())
-    fd_errors = torch.stack(fd_errors, dim=1)
+    results['fd errors'] = torch.stack(fd_errors, dim=1)
 
     # error of model
     errors = [starting_error]
@@ -98,25 +98,18 @@ class HeatModel(BaseModel):
     for i in range(n_steps):
       x_model = self.iter_step(x_model, bc).detach()
       errors.append(utils.l2_error(x_model, gt).cpu())
-    errors = torch.stack(errors, dim=1)
+    results['model errors'] = torch.stack(errors, dim=1)
 
-#    print('Kernel:', self.iterator.layers[0].weight.data)
-#    print('Bias:', self.iterator.layers[0].bias.data)
-    return errors, fd_errors
+    # Run model until switch_to_fd, then switch to fd
+    errors = [starting_error]
+    x_model = x.detach()
+    if switch_to_fd > 0:
+      for i in range(switch_to_fd):
+        x_model = self.iter_step(x_model, bc).detach()
+        errors.append(utils.l2_error(x_model, gt).cpu())
+      for j in range(n_steps - switch_to_fd):
+        x_model = utils.fd_step(x_model, bc).detach()
+        errors.append(utils.l2_error(x_model, gt).cpu())
+      results['mix errors'] = torch.stack(errors, dim=1)
 
-  def plot_error_curves(self, errors, fd_errors):
-    '''
-    Plot model and fd error curves.
-    errors, fd_errors: torch Tensor, size (batch_size x n_steps)
-    Return images: torch Tensor, size (3 x H x (W * batch_size))
-    '''
-    W, H = 640, 480
-    images = []
-    for i in range(errors.size(0)):
-      img = utils.plot([{'y': fd_errors[i], 'label': 'fd errors'},
-                        {'y': errors[i], 'label': 'model errors'}],
-                       {'title': 'iterations', 'image_size': (W, H)})
-      img = img.transpose((2, 0, 1)) / 255 # 3 x H x W
-      images.append(torch.Tensor(img))
-    images = torchvision.utils.make_grid(images, nrow=errors.size(0))
-    return images
+    return results

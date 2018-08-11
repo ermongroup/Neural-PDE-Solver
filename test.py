@@ -12,8 +12,8 @@ def evaluate(opt, model, data_loader, vis=None):
   model.setup(is_train=False)
   for step, data in enumerate(data_loader):
     bc, final, x = data['bc'], data['final'], data['x']
-    errors, fd_errors = model.evaluate(x, final, bc, opt.n_evaluation_steps)
-    images = model.plot_error_curves(errors, fd_errors)
+    error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps, opt.switch_to_fd)
+    images = utils.plot_error_curves(error_dict)
     if vis is not None:
       vis.add_image({'errors': images}, step)
     if (step + 1) % opt.log_every == 0:

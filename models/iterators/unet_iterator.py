@@ -21,5 +21,6 @@ class UNetIterator(Iterator):
     y = x + self.layers(x_pad) # residual
     y = self.activation(y)
     # Set boundary
-    y = utils.set_boundary(y.squeeze(1), bc).unsqueeze(1) # same size as x
+    inner = y.squeeze(1)[:, 1:-1, 1:-1]
+    y = utils.pad_boundary(inner, bc).unsqueeze(1) # same size as x
     return y
