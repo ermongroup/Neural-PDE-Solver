@@ -23,7 +23,12 @@ class HeatModel(BaseModel):
 
     if opt.is_train:
       self.criterion_mse = nn.MSELoss().cuda()
-      self.optimizer = optim.Adam(self.iterator.parameters(), lr=opt.lr_init)
+      if opt.optimizer == 'sgd':
+        self.optimizer = optim.SGD(self.iterator.parameters(), lr=opt.lr_init)
+      elif opt.optimizer == 'adam':
+        self.optimizer = optim.Adam(self.iterator.parameters(), lr=opt.lr_init)
+      else:
+        raise NotImplementedError
       # Hyperparameters
       self.max_iter_steps = opt.max_iter_steps
       self.max_iter_steps_from_gt = opt.max_iter_steps_from_gt
