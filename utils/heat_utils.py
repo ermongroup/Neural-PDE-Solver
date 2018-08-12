@@ -131,7 +131,7 @@ def construct_matrix(bc, image_size, iter_func):
     x = x.cuda()
     bc = bc.cuda()
   x = set_boundary(x, bc)
-  y = iter_func(x, bc)
+  y = iter_func(x, bc).detach()
   bias = y[0, 1:-1, 1:-1].cpu().view(-1)
   # columns
   columns = []
@@ -139,7 +139,7 @@ def construct_matrix(bc, image_size, iter_func):
     for j in range(image_size - 2):
       y = x.clone()
       y[0, i + 1, j + 1] = 1
-      y = iter_func(y, bc)
+      y = iter_func(y, bc).detach()
       c = y[0, 1:-1, 1:-1].cpu().view(-1) - bias
       columns.append(c)
   A = torch.stack(columns, dim=1)
