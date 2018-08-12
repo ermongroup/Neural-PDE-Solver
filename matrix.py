@@ -27,22 +27,34 @@ def fd_1d():
   print('Solution:\n', v[:, -1] / v[-1, -1])
   print('Ground truth\n', np.linspace(left, right, num=(size + 2)))
 
-#import utils
-
-def construct_matrix(bc, image_size):
-  x = set_boundary(np.zeros((image_size, image_size)), bc)
-  y = utils.fd_step(x, bc)
 
 def fd_2d():
+  import utils
+
   data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/16x16')
   # Take first instance
   bc = np.load(os.path.join(data_dir, 'bc.npy'))[0] / 100
   frames = np.load(os.path.join(data_dir, 'frames', '0000.npy')) / 100
-  idx = 0
+  idx = 3 # random
   bc = bc[idx]
   gt = frames[idx, -1]
-  x = set_boundary(np.zeros_like(gt), bc)
-  construct_matrix()
+  A, B = utils.construct_matrix(bc, 16, utils.fd_step)
+  A, B = A.numpy(), B.numpy()
+
+  w, v = np.linalg.eig(A)
+  print('A')
+  print('Eigenvalues:\n', sorted(np.abs(w)))
+
+  w, v = np.linalg.eig(B)
+  print('B')
+  print('Eigenvalues:\n', sorted(np.abs(w)))
+  v = np.real(v)
+  y = v[:, -1] / v[-1, -1]
+  diff = y[:-1] - gt[1:-1, 1:-1].flatten()
+  if np.all(diff <  1e-5):
+    print('Solution correct!')
+
 
 if __name__ == '__main__':
-  fd_1d()
+  #fd_1d()
+  fd_2d()

@@ -113,3 +113,42 @@ def plot_error_curves(results):
     images.append(torch.Tensor(img))
   images = torchvision.utils.make_grid(images, nrow=batch_size)
   return images
+
+def construct_matrix(bc, image_size, iter_func):
+  '''
+  Construct the update matrix given the iterator function.
+  x' = Ax + b
+  y' = By, where y = [- x -, 1]
+  iter_func: function, iter_func(x, b).
+             x must be (1 x image_size x image_size).
+  Return matrix A and B (torch Tensors).
+  '''
+  bc = torch.Tensor(bc).view(1, 4)
+
+  # Find bias
+  x = torch.zeros(1, image_size, image_size)
+  if torch.cuda.is_available():
+    x = x.cuda()
+    bc = bc.cuda()
+  x = set_boundary(x, bc)
+  y = iter_func(x, bc)
+  bias = y[0, 1:-1, 1:-1].cpu().view(-1)
+  # columns
+  columns = []
+  for i in range(image_size - 2):
+    for j in range(image_size - 2):
+      y = x.clone()
+      y[0, i + 1, j + 1] = 1
+      y = iter_func(y, bc)
+      c = y[0, 1:-1, 1:-1].cpu().view(-1) - bias
+      columns.append(c)
+  A = torch.stack(columns, dim=1)
+  length = (image_size - 2) ** 2
+  assert A.size(0) == length
+
+  # Add bias and last row
+  bias = torch.cat([bias, torch.Tensor([1])]).view(-1, 1)
+  B = torch.cat([A, torch.zeros(1, length)], dim=0)
+  B = torch.cat([B, bias], dim=1)
+  assert B.size(0) == length + 1
+  return A, B
