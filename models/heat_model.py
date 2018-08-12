@@ -36,16 +36,20 @@ class HeatModel(BaseModel):
     x = x.cuda()
     gt = gt.cuda()
     bc = bc.cuda()
+    loss_dict = {}
 
-    N = np.random.randint(1, self.max_iter_steps + 1)
-    # N-1 iterations from x
-    y = x.detach()
-    for i in range(N - 1):
-      y = self.iter_step(y, bc).detach()
-    # One more iteration (no detach)
-    y = self.iter_step(y, bc)
-    loss_x = self.criterion_mse(y, gt)
-    loss_dict = {'loss_x': loss_x.item()}
+    if self.lambdas['gt'] < 1:
+      N = np.random.randint(1, self.max_iter_steps + 1)
+      # N-1 iterations from x
+      y = x.detach()
+      for i in range(N - 1):
+        y = self.iter_step(y, bc).detach()
+      # One more iteration (no detach)
+      y = self.iter_step(y, bc)
+      loss_x = self.criterion_mse(y, gt)
+      loss_dict['loss_x'] = loss_x.item()
+    else:
+      loss_x = 0
 
     if self.lambdas['gt'] > 0:
       M = np.random.randint(1, self.max_iter_steps_from_gt + 1)
