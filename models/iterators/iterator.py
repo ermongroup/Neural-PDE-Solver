@@ -14,6 +14,8 @@ class Iterator(nn.Module):
       x = torch.sigmoid(x)
     elif self.act == 'clamp':
       x = x.clamp(0, 1)
+    elif self.act == 'none':
+      pass
     else:
       raise NotImplementedError
     return x

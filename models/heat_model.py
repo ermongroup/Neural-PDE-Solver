@@ -81,6 +81,13 @@ class HeatModel(BaseModel):
     y = y.squeeze(1)
     return y
 
+  def get_activation(self):
+    return self.iterator.act
+
+  def change_activation(self, act):
+    ''' Change activation function, used to calculate eigenvalues '''
+    self.iterator.act = act
+
   def evaluate(self, x, gt, bc, n_steps, switch_to_fd=-1):
     '''
     x, gt: size (batch_size x image_size x image_size)

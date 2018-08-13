@@ -8,15 +8,32 @@ import utils
 from models.heat_model import HeatModel
 
 
+def calculate_eigenvalues(model):
+  '''
+  Construct update matrix and calculate eigenvalues.
+  '''
+  # Remove activation first
+  activation = model.get_activation()
+  model.change_activation('none')
+  # Random boundary conditions
+  bc = np.random.rand(1, 4)
+  A, B = utils.construct_matrix(bc, 16, model.iter_step)
+  w, v = np.linalg.eig(A)
+  # Add activation back
+  model.change_activation(activation)
+  return w
+
 def evaluate(opt, model, data_loader, logger, vis=None):
   model.setup(is_train=False)
 
-  # Construct update matrix
-  bc = np.random.rand(1, 4)
-  A, B = utils.construct_matrix(bc, 16, model.iter_step)
-  w, v = np.linalg.eig(B)
+  w = calculate_eigenvalues(model)
   logger.print('Eigenvalues:\n{}\n'.format(w))
   logger.print('Absolute eigenvalues:\n{}\n'.format(sorted(np.abs(w))))
+
+  # Print model parameters
+  state_dict = model.iterator.state_dict()
+  for key in state_dict.keys():
+    logger.print('{}\n{}'.format(key, state_dict[key]))
 
   for step, data in enumerate(data_loader):
     bc, final, x = data['bc'], data['final'], data['x']
