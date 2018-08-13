@@ -33,9 +33,7 @@ class BasicIterator(Iterator):
     self.layers = nn.Sequential(
                       nn.Conv2d(1, 1, 3, bias=False))
     # Initialize
-    initial_weight = torch.Tensor([[0, 1, 0],
-                                   [1, 0, 1],
-                                   [0, 1, 0]]).view(1, 1, 3, 3) * 0.25
+    initial_weight = torch.Tensor(utils.fd_update_kernel).view(1, 1, 3, 3)
     self.layers[0].weight = nn.Parameter(initial_weight)
 
   def forward(self, x, bc):

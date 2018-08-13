@@ -6,16 +6,16 @@ import torchvision
 from .misc import plot
 
 # Kernels
-update_kernel = np.array([[0, 1, 0],
-                          [1, 0, 1],
-                          [0, 1, 0]]) * 0.25
+fd_update_kernel = np.array([[0, 1, 0],
+                             [1, 0, 1],
+                             [0, 1, 0]]) * 0.25
 
-loss_kernel = np.array([[0, -1, 0],
-                        [-1, 4, -1],
-                        [0, -1, 0]])
+fd_loss_kernel = np.array([[0, -1, 0],
+                           [-1, 4, -1],
+                           [0, -1, 0]])
 
-update_kernel = torch.Tensor(update_kernel)
-loss_kernel = torch.Tensor(loss_kernel)
+update_kernel = torch.Tensor(fd_update_kernel)
+loss_kernel = torch.Tensor(fd_loss_kernel)
 if torch.cuda.is_available():
   update_kernel = update_kernel.cuda()
   loss_kernel = loss_kernel.cuda()

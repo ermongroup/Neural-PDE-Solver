@@ -10,7 +10,7 @@ from models.heat_model import HeatModel
 
 def evaluate(opt, model, data_loader, logger, vis=None):
   model.setup(is_train=False)
-  
+
   # Construct update matrix
   bc = np.random.rand(1, 4)
   A, B = utils.construct_matrix(bc, 16, model.iter_step)
