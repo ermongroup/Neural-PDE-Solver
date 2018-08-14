@@ -7,28 +7,46 @@ import data
 import utils
 from models.heat_model import HeatModel
 
+test_bc = np.array([0.11, 0.81, 0.34, 0.42]).reshape((1, 4))
 
 def calculate_eigenvalues(model):
-  '''
-  Construct update matrix and calculate eigenvalues.
-  '''
   # Remove activation first
   activation = model.get_activation()
   model.change_activation('none')
-  # Random boundary conditions
-  bc = np.random.rand(1, 4)
-  A, B = utils.construct_matrix(bc, 16, model.iter_step)
-  w, v = np.linalg.eig(A)
+  # Eigen-decomposition using test_bc
+  A, B = utils.construct_matrix(test_bc, 16, model.iter_step)
+  w, v = np.linalg.eig(B)
   # Add activation back
   model.change_activation(activation)
-  return w
+  return w, v
+
+def check_eigenvalues(opt, model, logger, vis):
+  '''
+  Construct update matrix and calculate eigenvalues.
+  Compare with finite difference. Plot eigenvalues.
+  '''
+  w, v = calculate_eigenvalues(model)
+  np.save(os.path.join(opt.ckpt_path, 'eigenvalues.npy'), w)
+  np.save(os.path.join(opt.ckpt_path, 'eigenvectors.npy'), v)
+  logger.print('Eigenvalues:\n{}\n'.format(w))
+  logger.print('Absolute eigenvalues:\n{}\n'.format(sorted(np.abs(w))))
+  w = sorted(np.abs(w))
+
+  # Finite difference
+  A, B = utils.construct_matrix(test_bc, 16, utils.fd_step)
+  w_fd, v_fd = np.linalg.eig(B)
+  w_fd = sorted(np.abs(w_fd))
+  print('Finite difference eigenvalues:\n{}\n'.format(w_fd))
+  if vis is not None:
+    img = utils.plot([{'y': w_fd, 'label': 'fd eigenvalues'},
+                      {'y': w, 'label': 'model eigenvalues'}],
+                     config={'title': 'Eigenvalues'})
+    vis.add_image({'eigenvalues': img})
 
 def evaluate(opt, model, data_loader, logger, vis=None):
   model.setup(is_train=False)
 
-  w = calculate_eigenvalues(model)
-  logger.print('Eigenvalues:\n{}\n'.format(w))
-  logger.print('Absolute eigenvalues:\n{}\n'.format(sorted(np.abs(w))))
+  check_eigenvalues(opt, model, logger, vis)
 
   # Print model parameters
   state_dict = model.iterator.state_dict()

@@ -11,6 +11,8 @@ def to_numpy(array):
   '''
   if isinstance(array, np.ndarray):
     return array
+  elif isinstance(array, list):
+    return np.array(array)
   elif isinstance(array, torch.Tensor):
     return array.cpu().numpy()
 
