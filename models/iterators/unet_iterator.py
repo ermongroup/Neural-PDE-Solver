@@ -9,9 +9,6 @@ class UNetIterator(Iterator):
   def __init__(self, act, nf=1):
     super(UNetIterator, self).__init__(act)
 
-    self.fd_update_kernel = torch.Tensor(utils.fd_update_kernel).view(1, 1, 3, 3).cuda()
-    self.fd_loss_kernel = torch.Tensor(utils.fd_loss_kernel * (-0.25)).view(1, 1, 3, 3).cuda()
-
     self.conv1 = nn.Conv2d(1, nf, 3, stride=2, padding=0, bias=False)
     self.conv2 = nn.Conv2d(nf, 1, 3, stride=1, padding=0, bias=False)
 

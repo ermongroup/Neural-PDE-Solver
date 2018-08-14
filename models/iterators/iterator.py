@@ -7,6 +7,9 @@ class Iterator(nn.Module):
   def __init__(self, act):
     super(Iterator, self).__init__()
     self.act = act
+    # Finite difference kernels
+    self.fd_update_kernel = torch.Tensor(utils.fd_update_kernel).view(1, 1, 3, 3).cuda()
+    self.fd_loss_kernel = torch.Tensor(utils.fd_loss_kernel * (-0.25)).view(1, 1, 3, 3).cuda()
 
   def activation(self, x):
     ''' Apply activation '''

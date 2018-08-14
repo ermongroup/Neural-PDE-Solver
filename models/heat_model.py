@@ -17,6 +17,8 @@ class HeatModel(BaseModel):
       self.iterator = BasicIterator(opt.activation).cuda()
     elif opt.iterator == 'unet':
       self.iterator = UNetIterator(opt.activation).cuda()
+    elif opt.iterator == 'conv':
+      self.iterator = ConvIterator(opt.activation).cuda()
     else:
       raise NotImplementedError
     self.nets['iterator'] = self.iterator
