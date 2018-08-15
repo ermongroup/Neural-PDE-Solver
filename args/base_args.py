@@ -28,7 +28,7 @@ class BaseArgs:
                              help='checkpoint name')
     self.parser.add_argument('--load_ckpt_path', type=str, default='',
                              help='checkpoint path to load trained model')
-    self.parser.add_argument('--log_every', type=int, default=20, help='log every x steps')
+    self.parser.add_argument('--log_every', type=int, default=50, help='log every x steps')
     self.parser.add_argument('--save_every', type=int, default=10, help='save every x epochs')
     self.parser.add_argument('--evaluate_every', type=int, default=-1,
                              help='evaluate on val set every x epochs')

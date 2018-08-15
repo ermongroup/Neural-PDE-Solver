@@ -94,24 +94,26 @@ def fd_iter(x, bc, error_threshold, max_iters=100000):
       break
   return x
 
-def plot_error_curves(results):
+def plot_error_curves(results, num=None):
   '''
   Plot model and fd error curves.
   results: dictionary of torch Tensors with size (batch_size x n_steps),
            returned by model.evaluate().
-  Return images: torch Tensor, size (3 x H x (W * batch_size))
+  Return images: torch Tensor, size (3 x H x (W * num))
   '''
   W, H = 640, 480
   images = []
-  batch_size = results['fd errors'].size(0)
-  for i in range(batch_size):
+  if num is None:
+    num = results['fd errors'].size(0)
+  for i in range(num):
     curves = []
     for label in results.keys():
       curves.append({'y': results[label][i], 'label': label})
-    img = plot(curves, config={'title': 'iterations', 'image_size': (W, H)})
+    img = plot(curves, config={'title': 'Error curves', 'image_size': (W, H),
+                               'xlabel': 'iterations'})
     img = img.transpose((2, 0, 1)) / 255 # 3 x H x W
     images.append(torch.Tensor(img))
-  images = torchvision.utils.make_grid(images, nrow=batch_size)
+  images = torchvision.utils.make_grid(images, nrow=num)
   return images
 
 def construct_matrix(bc, image_size, iter_func):

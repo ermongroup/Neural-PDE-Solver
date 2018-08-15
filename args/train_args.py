@@ -17,7 +17,7 @@ class TrainArgs(BaseArgs):
                              help='directory of checkpoint')
 
     # Hyperparameters
-    self.parser.add_argument('--optimizer', type=str, default='sgd',
+    self.parser.add_argument('--optimizer', type=str, default='adam',
                              choices=['sgd', 'adam'])
     self.parser.add_argument('--lambda_gt', type=float, default=0)
     self.parser.add_argument('--max_iter_steps', type=int, default=1)

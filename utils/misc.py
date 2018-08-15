@@ -43,7 +43,9 @@ def plot(data_list, config):
     y = to_numpy(data['y'])
     x = np.arange(len(y))
     plt.plot(x, y, label=data['label'])
-  plt.xlabel(config['title'])
+  plt.title(config['title'])
+  if 'xlabel' in config:
+    plt.xlabel(config['xlabel'])
   plt.ylim(ymin=0)
   plt.legend()
 

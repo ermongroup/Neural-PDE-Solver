@@ -13,10 +13,11 @@ def main():
   # Validation
   val_opt = copy.deepcopy(opt)
   val_opt.is_train = False
-  val_opt.batch_size = 4
-  val_loader = get_random_data_loader(val_opt)
+  val_opt.data_limit = 20
+  val_loader = get_data_loader(val_opt)
 
   model = HeatModel(opt)
+  metric = utils.Metrics(scale=1, error_threshold=0.05)
 
   for epoch in range(opt.start_epoch, opt.n_epochs):
     model.setup(is_train=True)
@@ -28,15 +29,24 @@ def main():
         vis.add_scalar(loss_dict, epoch * len(data_loader) + step)
 
     logger.print(['[Summary] Epoch {}/{}:'.format(epoch, opt.n_epochs - 1)])
+
+    # Evaluate
     if opt.evaluate_every > 0 and (epoch + 1) % opt.evaluate_every == 0:
       model.setup(is_train=False)
-      # Randomly sample test data
-      data = next(iter(val_loader))
-      bc, final, x = data['bc'], data['final'], data['x']
-      error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps)
-      # Plot error curve
-      images = utils.plot_error_curves(error_dict)
-      vis.add_image({'errors': images}, epoch)
+      for step, data in enumerate(val_loader):
+        bc, final, x = data['bc'], data['final'], data['x']
+        error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps)
+        if step == 0:
+          # Plot the first 4 error curves
+          images = utils.plot_error_curves(error_dict, num=4)
+          vis.add_image({'errors': images}, epoch)
+        metric.update(error_dict)
+      results = metric.get_results()
+      vis.add_scalar({'steps': {'fd': results['fd'], 'model': results['model']},
+                      'ratio': results['ratio']}, epoch)
+      for key in results:
+        logger.print('{}: {}'.format(key, results[key]))
+      metric.reset()
 
     if (epoch + 1) % opt.save_every == 0 or epoch == opt.n_epochs - 1:
       model.save(opt.ckpt_path, epoch + 1)
