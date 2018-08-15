@@ -5,12 +5,15 @@ import torch
 def fd_1d():
   print('1D finite difference')
   size = 8
-  x = np.zeros((size, size))
-  x[np.arange(1, size), np.arange(size - 1)] = 0.5
-  x[np.arange(size - 1), np.arange(1, size)] = 0.5
+  # loss matrix
+  loss = np.eye(size) * -1
+  loss[np.arange(1, size), np.arange(size - 1)] = 0.5
+  loss[np.arange(size - 1), np.arange(1, size)] = 0.5
+  beta = 0.9
+  x = np.eye(size) + beta * loss
   print(x)
   w, v = np.linalg.eig(x)
-  print('Eigenvalues:', w)
+  print('Eigenvalues:\n', sorted(w))
   print('')
 
   # Add boundary
@@ -56,5 +59,5 @@ def fd_2d():
 
 
 if __name__ == '__main__':
-  #fd_1d()
-  fd_2d()
+  fd_1d()
+  #fd_2d()

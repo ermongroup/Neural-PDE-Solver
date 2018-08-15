@@ -18,7 +18,7 @@ class HeatModel(BaseModel):
     elif opt.iterator == 'unet':
       self.iterator = UNetIterator(opt.activation).cuda()
     elif opt.iterator == 'conv':
-      self.iterator = ConvIterator(opt.activation).cuda()
+      self.iterator = ConvIterator(opt.activation, opt.conv_n_layers).cuda()
     else:
       raise NotImplementedError
     self.nets['iterator'] = self.iterator
@@ -108,7 +108,9 @@ class HeatModel(BaseModel):
     for i in range(n_steps):
       x_fd = utils.fd_step(x_fd, bc).detach()
       fd_errors.append(utils.l2_error(x_fd, gt).cpu())
-    results['fd errors'] = torch.stack(fd_errors, dim=1)
+    fd_errors = torch.stack(fd_errors, dim=1)
+    fd_errors = fd_errors / fd_errors[:, :1] # Normalize by starting_error
+    results['fd errors'] = fd_errors
 
     # error of model
     errors = [starting_error]
@@ -116,7 +118,9 @@ class HeatModel(BaseModel):
     for i in range(n_steps):
       x_model = self.iter_step(x_model, bc).detach()
       errors.append(utils.l2_error(x_model, gt).cpu())
-    results['model errors'] = torch.stack(errors, dim=1)
+    errors = torch.stack(errors, dim=1)
+    errors = errors / errors[:, :1] # Normalize by starting_error
+    results['model errors'] = errors
 
     # Run model until switch_to_fd, then switch to fd
     errors = [starting_error]
@@ -128,6 +132,8 @@ class HeatModel(BaseModel):
       for j in range(n_steps - switch_to_fd):
         x_model = utils.fd_step(x_model, bc).detach()
         errors.append(utils.l2_error(x_model, gt).cpu())
-      results['mix errors'] = torch.stack(errors, dim=1)
+      errors = torch.stack(errors, dim=1)
+      errors = errors / errors[:, :1]
+      results['mix errors'] = errors
 
     return results

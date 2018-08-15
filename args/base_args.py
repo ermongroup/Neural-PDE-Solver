@@ -17,7 +17,7 @@ class BaseArgs:
     self.parser.add_argument('--image_size', type=int, default=64)
     # Specific
     self.parser.add_argument('--max_temp', type=int, default=100)
-    self.parser.add_argument('--zero_init', type=int, default=1)
+    self.parser.add_argument('--zero_init', type=int, default=0)
     self.parser.add_argument('--data_limit', type=int, default=-1, help='limit amount of data when testing')
 
     # ckpt and logging
@@ -43,6 +43,8 @@ class BaseArgs:
                              help='when to switch to fd, -1 if no switch')
     self.parser.add_argument('--activation', type=str, default='clamp',
                              help='last layer of iterator to make output [0, 1]')
+    self.parser.add_argument('--conv_n_layers', type=int, default=1,
+                             help='number of layers in the conv iterator')
 
   def parse(self):
     opt = self.parser.parse_args()
@@ -53,9 +55,13 @@ class BaseArgs:
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:
       data_type = 'zero' if opt.zero_init else 'random'
+      if opt.iterator == 'conv':
+        iterator_name = '{}{}'.format(opt.iterator, opt.conv_n_layers)
+      else:
+        iterator_name = opt.iterator
       opt.ckpt_name = '{}{}_{}_iter{}_{}_gt{}_{}{:.0e}'.format(\
                           (opt.ckpt_name + '_') if opt.ckpt_name != '' else '',
-                          opt.iterator, data_type, opt.max_iter_steps,
+                          iterator_name, data_type, opt.max_iter_steps,
                           opt.max_iter_steps_from_gt, opt.lambda_gt,
                           opt.optimizer, opt.lr_init)
       opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)
