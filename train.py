@@ -13,11 +13,11 @@ def main():
   # Validation
   val_opt = copy.deepcopy(opt)
   val_opt.is_train = False
-  val_opt.data_limit = 20
+  val_opt.data_limit = 40
   val_loader = get_data_loader(val_opt)
 
   model = HeatModel(opt)
-  metric = utils.Metrics(scale=1, error_threshold=0.05)
+  metric = utils.Metrics(scale=model.n_operations, error_threshold=0.05)
 
   for epoch in range(opt.start_epoch, opt.n_epochs):
     model.setup(is_train=True)

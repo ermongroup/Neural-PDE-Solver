@@ -44,6 +44,9 @@ def check_eigenvalues(opt, model, logger, vis):
     vis.add_image({'eigenvalues': img})
 
 def evaluate(opt, model, data_loader, logger, vis=None):
+  '''
+  Calculate eigenvalues and runtime comparison with finite difference.
+  '''
   model.setup(is_train=False)
 
   check_eigenvalues(opt, model, logger, vis)
@@ -53,9 +56,11 @@ def evaluate(opt, model, data_loader, logger, vis=None):
   for key in state_dict.keys():
     logger.print('{}\n{}'.format(key, state_dict[key]))
 
+  metric = utils.Metrics(scale=model.n_operations, error_threshold=0.1)
   for step, data in enumerate(data_loader):
     bc, final, x = data['bc'], data['final'], data['x']
     error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps, opt.switch_to_fd)
+    metric.update(error_dict)
     images = utils.plot_error_curves(error_dict)
     if vis is not None:
       vis.add_image({'errors': images}, step)
@@ -64,6 +69,11 @@ def evaluate(opt, model, data_loader, logger, vis=None):
     if (step + 1) == 20:
       # Hard code for now
       break
+
+  results = metric.get_results()
+  for key in results:
+    logger.print('{}: {}'.format(key, results[key]))
+  metric.reset()
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')
