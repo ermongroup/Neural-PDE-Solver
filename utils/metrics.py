@@ -4,6 +4,7 @@ from .misc import to_numpy
 
 class Metrics(object):
   def __init__(self, scale, error_threshold):
+    print('Runtime scaling: {}'.format(scale))
     self.scale = scale
     self.error_threshold = error_threshold
     self.model_steps = []

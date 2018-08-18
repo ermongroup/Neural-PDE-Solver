@@ -154,3 +154,19 @@ def construct_matrix(bc, image_size, iter_func):
   B = torch.cat([B, bias], dim=1)
   assert B.size(0) == length + 1
   return A, B
+
+def calculate_eigenvalues(model, image_size=16):
+  '''
+  Construct update matrix of the model, and calculate eigenvalues and eigenvectors.
+  Return eigenvalues w and eigenvectors v.
+  '''
+  # Remove activation first
+  activation = model.get_activation()
+  model.change_activation('none')
+  # Any bc works, won't change eigenvalues
+  test_bc = np.zeros((1, 4))
+  A, B = construct_matrix(test_bc, image_size, model.iter_step)
+  w, v = np.linalg.eig(B)
+  # Add activation back
+  model.change_activation(activation)
+  return w, v

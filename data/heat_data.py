@@ -26,11 +26,8 @@ def make_dataset(root, is_train, max_temp, random_start, zero_init, data_limit):
     path = os.path.join(root, 'frames', '{:04d}.npy'.format(i))
     frames = np.load(path) # batch_size x length x image_size x image_size
     if not random_start:
-      first_frame = frames[:, 0]
-#      if zero_init:
-#        first_frame[:, 1:-1, 1:-1] = 0
       # Take first and last frame only, (batch_size x 2 x image_size x image_size)
-      frames = np.stack([first_frame, frames[:, -1]], axis=1)
+      frames = np.stack([frames[:, 0], frames[:, -1]], axis=1)
     frames /= max_temp # Normalize
     data.append(frames)
   return bc, data
@@ -57,7 +54,8 @@ class HeatDataset(data.Dataset):
     image_size = x.size(0)
     if self.zero_init:
       x[1:-1, 1:-1] = 0
-    else:
+    elif self.is_train:
+      # only training
       x[1:-1, 1:-1] = torch.rand(image_size - 2, image_size - 2)
 
     results = {'bc': bc, 'final': final, 'x': x}

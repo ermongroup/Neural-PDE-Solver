@@ -7,25 +7,13 @@ import data
 import utils
 from models.heat_model import HeatModel
 
-test_bc = np.array([0.11, 0.81, 0.34, 0.42]).reshape((1, 4))
-
-def calculate_eigenvalues(model):
-  # Remove activation first
-  activation = model.get_activation()
-  model.change_activation('none')
-  # Eigen-decomposition using test_bc
-  A, B = utils.construct_matrix(test_bc, 16, model.iter_step)
-  w, v = np.linalg.eig(B)
-  # Add activation back
-  model.change_activation(activation)
-  return w, v
 
 def check_eigenvalues(opt, model, logger, vis):
   '''
   Construct update matrix and calculate eigenvalues.
   Compare with finite difference. Plot eigenvalues.
   '''
-  w, v = calculate_eigenvalues(model)
+  w, v = utils.calculate_eigenvalues(model)
   np.save(os.path.join(opt.ckpt_path, 'eigenvalues.npy'), w)
   np.save(os.path.join(opt.ckpt_path, 'eigenvectors.npy'), v)
   logger.print('Eigenvalues:\n{}\n'.format(w))
