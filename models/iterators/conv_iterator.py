@@ -11,8 +11,9 @@ class ConvIterator(Iterator):
 
     layers = []
     for i in range(n_layers):
-      layers.append(nn.Conv2d(1, 1, 3, stride=1, padding=0, bias=False))
-    self.layers = nn.ModuleList(layers)
+      layers += [nn.ReplicationPad2d(1),
+                 nn.Conv2d(1, 1, 3, stride=1, padding=0, bias=False)]
+    self.layers = nn.Sequential(*layers)
     self.n_layers = n_layers
 
   def forward(self, x, bc):
@@ -23,10 +24,7 @@ class ConvIterator(Iterator):
     z = F.conv2d(x, self.fd_update_kernel)
     y = x[:, :, 1:-1, 1:-1] - z
 
-    for i in range(self.n_layers):
-      y = F.pad(y, (1, 1, 1, 1), mode='replicate')
-      y = self.layers[i](y)
-
+    y = self.layers(y)
     y = z + y # residual
 
     y = self.activation(y)
