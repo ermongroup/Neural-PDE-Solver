@@ -12,10 +12,10 @@ parser.add_argument('--save_dir', type=str,
                     default=os.path.join(os.environ['HOME'], 'slowbro/PDE/heat'))
 parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--save_every', type=int, default=1)
-parser.add_argument('--n_frames', type=int, default=50)
+parser.add_argument('--n_frames', type=int, default=1)
 parser.add_argument('--n_runs', type=int, default=200)
 # data
-parser.add_argument('--image_size', type=int, default=64)
+parser.add_argument('--image_size', type=int, default=128)
 parser.add_argument('--max_temp', type=int, default=100)
 
 np.random.seed(666)
@@ -32,7 +32,7 @@ def main(opt):
   np.save(os.path.join(opt.save_dir, 'opt.npy'), opt)
 
   for run in range(opt.n_runs):
-    x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size) * opt.max_temp
+    x = np.random.rand(opt.batch_size, opt.image_size + 2, opt.image_size + 2) * opt.max_temp
     bc = boundary_conditions[run]
     x = utils.set_boundary(x, bc)
     frames = [x]
@@ -50,9 +50,12 @@ def main(opt):
       y = x.cpu().numpy()
       frames.append(y)
 
-    # Iterate until ground truth
+    # Find ground truth
+    # Initialize with average of boundary conditions
+    x[:, 1:-1, 1:-1] = bc.mean(dim=1).view(-1, 1, 1)
     error_threshold = 0.001
     max_iters = 20000
+    # Iterate until ground truth
     for i in range(max_iters):
       x = utils.fd_step(x, bc)
       error = utils.fd_error(x)

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 import utils
 
-def multigrid(x, gt, bc):
+def test_residual(x, gt, bc):
   y = utils.fd_step(x, bc)
   residual = y - x
   e = gt - x
@@ -39,4 +39,5 @@ if __name__ == '__main__':
   frames = np.load(os.path.join(data_dir, 'frames', '0000.npy'))[0]
   x = torch.Tensor(frames[0:1]).cuda()
   gt = torch.Tensor(frames[-1:]).cuda()
-  multigrid(x, gt, bc)
+
+  test_residual(x, gt, bc)
