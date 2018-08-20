@@ -13,9 +13,9 @@ parser.add_argument('--save_dir', type=str,
 parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--save_every', type=int, default=1)
 parser.add_argument('--n_frames', type=int, default=1)
-parser.add_argument('--n_runs', type=int, default=200)
+parser.add_argument('--n_runs', type=int, default=1000)
 # data
-parser.add_argument('--image_size', type=int, default=128)
+parser.add_argument('--image_size', type=int, default=16)
 parser.add_argument('--max_temp', type=int, default=100)
 
 np.random.seed(666)
