@@ -42,15 +42,37 @@ class HeatDataset(data.Dataset):
     self.is_train = is_train
     self.zero_init = zero_init
 
+  def rotate(self, bc, x, final):
+    ''' Random rotate '''
+    k = random.randint(0, 3)
+    if k > 0:
+      x = np.rot90(x, k).copy()
+      final = np.rot90(final, k).copy()
+      if k == 1:
+        indices = [3, 2, 0, 1]
+      elif k == 2:
+        indices = [1, 0, 3, 2]
+      elif k == 3:
+        indices = [2, 3, 1, 0]
+      bc = bc[indices]
+    return bc, x, final
+
   def __getitem__(self, idx):
     i = idx // self.batch_size # which instance
     j = idx % self.batch_size # which batch
 
-    bc = torch.Tensor(self.bc[i, j])
+    bc = self.bc[i, j]
     frames = self.data[i][j] # length x image_size x image_size
-    final = torch.Tensor(frames[-1])
+    final = frames[-1]
+    x = frames[0] # first frame
+    if self.is_train:
+      # Random rotate
+      bc, x, final = self.rotate(bc, x, final)
+    bc = torch.Tensor(bc)
+    x = torch.Tensor(x)
+    final = torch.Tensor(final)
+    bc, x, final = torch.Tensor(bc), torch.Tensor(x), torch.Tensor(final)
 
-    x = torch.Tensor(frames[0]) # first frame
     image_size = x.size(0)
     if self.zero_init:
       x[1:-1, 1:-1] = 0
