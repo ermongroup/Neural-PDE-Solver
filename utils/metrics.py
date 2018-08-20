@@ -12,7 +12,7 @@ class Metrics(object):
 
   def update(self, error_dict):
     errors = to_numpy(error_dict['model errors'])
-    fd_errors = to_numpy(error_dict['fd errors'])
+    fd_errors = to_numpy(error_dict['Jacobi errors'])
     batch_size, length = errors.shape
     for i in range(batch_size):
       model_step = np.nonzero(errors[i] < self.error_threshold)[0][0]
@@ -25,7 +25,7 @@ class Metrics(object):
     self.model_steps = np.array(self.model_steps)
     self.fd_steps = np.array(self.fd_steps)
     ratios = self.model_steps / self.fd_steps
-    results = {'fd': self.fd_steps.mean(),
+    results = {'Jacobi': self.fd_steps.mean(),
                'model': self.model_steps.mean(),
                'ratio': ratios.mean()}
     return results

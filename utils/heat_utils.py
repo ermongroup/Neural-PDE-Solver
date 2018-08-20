@@ -42,7 +42,7 @@ def pad_boundary(x, bc):
 
 def fd_step(x, bc):
   '''
-  One update of finite difference method.
+  One update of Jacobi iterative method.
   x: torch tensor of size (batch_size x H x W)
   '''
   x = set_boundary(x, bc)
@@ -79,7 +79,7 @@ def l2_error(x, gt):
 
 def fd_iter(x, bc, error_threshold, max_iters=100000):
   '''
-  Run finite different iterations.
+  Run Jacobi iterations.
   x: torch tensor of size (batch_size x H x W)
   error_threshold is the sum of pixels.
   '''
@@ -96,7 +96,7 @@ def fd_iter(x, bc, error_threshold, max_iters=100000):
 
 def plot_error_curves(results, num=None):
   '''
-  Plot model and fd error curves.
+  Plot model and Jacobi error curves.
   results: dictionary of torch Tensors with size (batch_size x n_steps),
            returned by model.evaluate().
   Return images: torch Tensor, size (3 x H x (W * num))
@@ -104,7 +104,7 @@ def plot_error_curves(results, num=None):
   W, H = 640, 480
   images = []
   if num is None:
-    num = results['fd errors'].size(0)
+    num = results['Jacobi errors'].size(0)
   for i in range(num):
     curves = []
     for label in results.keys():

@@ -96,7 +96,7 @@ class HeatModel(BaseModel):
   def evaluate(self, x, gt, bc, n_steps, switch_to_fd=-1):
     '''
     x, gt: size (batch_size x image_size x image_size)
-    Run fd and our iterator for n_steps iterations, and calculate errors.
+    Run Jacobi and our iterator for n_steps iterations, and calculate errors.
     Return a dictionary of errors: size (batch_size x (n_steps + 1)).
     '''
     bc = bc.cuda()
@@ -105,7 +105,7 @@ class HeatModel(BaseModel):
     starting_error = utils.l2_error(x, gt).cpu()
     results = {}
 
-    # fd
+    # Jacobi
     fd_errors = [starting_error]
     x_fd = x.detach()
     for i in range(n_steps):
@@ -113,7 +113,7 @@ class HeatModel(BaseModel):
       fd_errors.append(utils.l2_error(x_fd, gt).cpu())
     fd_errors = torch.stack(fd_errors, dim=1)
     fd_errors = fd_errors / fd_errors[:, :1] # Normalize by starting_error
-    results['fd errors'] = fd_errors
+    results['Jacobi errors'] = fd_errors
 
     # error of model
     errors = [starting_error]

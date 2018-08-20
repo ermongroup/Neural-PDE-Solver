@@ -50,7 +50,7 @@ def main():
           vis.add_image({'errors': images}, epoch)
         metric.update(error_dict)
       results = metric.get_results()
-      vis.add_scalar({'steps': {'fd': results['fd'], 'model': results['model']},
+      vis.add_scalar({'steps': {'Jacobi': results['Jacobi'], 'model': results['model']},
                       'ratio': results['ratio']}, epoch)
       for key in results:
         logger.print('{}: {}'.format(key, results[key]))

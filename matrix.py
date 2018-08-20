@@ -9,12 +9,13 @@ def fd_1d():
   loss = np.eye(size) * -1
   loss[np.arange(1, size), np.arange(size - 1)] = 0.5
   loss[np.arange(size - 1), np.arange(1, size)] = 0.5
-  beta = 0.9
+  beta = 1.0
   x = np.eye(size) + beta * loss
   print(x)
   w, v = np.linalg.eig(x)
   print('Eigenvalues:\n', sorted(w))
   print('')
+  print('SA^-1:\n{}'.format(x.dot(np.linalg.inv(loss))))
 
   # Add boundary
   left, right = 3, 5 # random values

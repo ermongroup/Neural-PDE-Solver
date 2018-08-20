@@ -26,7 +26,7 @@ def check_eigenvalues(opt, model, logger, vis):
   w_fd = sorted(np.abs(w_fd))
   print('Finite difference eigenvalues:\n{}\n'.format(w_fd))
   if vis is not None:
-    img = utils.plot([{'y': w_fd, 'label': 'fd eigenvalues'},
+    img = utils.plot([{'y': w_fd, 'label': 'Jacobi eigenvalues'},
                       {'y': w, 'label': 'model eigenvalues'}],
                      config={'title': 'Eigenvalues'})
     vis.add_image({'eigenvalues': img})
