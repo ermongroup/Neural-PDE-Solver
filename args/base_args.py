@@ -35,7 +35,7 @@ class BaseArgs:
 
     # model
     self.parser.add_argument('--iterator', type=str, default='basic',
-                             choices=['basic', 'unet', 'conv'],
+                             choices=['jacobi', 'basic', 'unet', 'conv'],
                              help='specify iterator architecture')
     self.parser.add_argument('--n_evaluation_steps', type=int, default=100,
                              help='number of iterations to run when evaluating')

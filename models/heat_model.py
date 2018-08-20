@@ -13,7 +13,11 @@ class HeatModel(BaseModel):
     super(HeatModel, self).__init__()
     self.is_train = opt.is_train
 
-    if opt.iterator == 'basic':
+    if opt.iterator == 'jacobi':
+      self.iterator = JacobiIterator().cuda()
+      self.n_operations = 1
+      self.is_train = False
+    elif opt.iterator == 'basic':
       self.iterator = BasicIterator(opt.activation).cuda()
       self.n_operations = 1
     elif opt.iterator == 'unet':
@@ -26,7 +30,7 @@ class HeatModel(BaseModel):
       raise NotImplementedError
     self.nets['iterator'] = self.iterator
 
-    if opt.is_train:
+    if self.is_train:
       self.criterion_mse = nn.MSELoss().cuda()
       if opt.optimizer == 'sgd':
         self.optimizer = optim.SGD(self.iterator.parameters(), lr=opt.lr_init)
@@ -43,6 +47,9 @@ class HeatModel(BaseModel):
     '''
     x, gt: size (batch_size x image_size x image_size)
     '''
+    if not self.is_train:
+      return {}
+
     x = x.cuda()
     gt = gt.cuda()
     bc = bc.cuda()
