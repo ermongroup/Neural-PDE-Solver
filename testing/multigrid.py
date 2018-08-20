@@ -32,12 +32,18 @@ def test_residual(x, gt, bc):
   final = y + e
   print(torch.abs(gt - final))
 
+
+def test_multigrid(x, gt, bc):
+  print('Multigrid')
+  y = utils.multigrid(x, bc, 4, 1, 100)
+
 if __name__ == '__main__':
-  data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/16x16')
-  bc = np.load(os.path.join(data_dir, 'bc.npy'))[0][0:1]
+  data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/31x31')
+  bc = np.load(os.path.join(data_dir, 'bc.npy'))[0][0:1] / 100
   bc = torch.Tensor(bc)
-  frames = np.load(os.path.join(data_dir, 'frames', '0000.npy'))[0]
+  frames = np.load(os.path.join(data_dir, 'frames', '0000.npy'))[0] / 100
   x = torch.Tensor(frames[0:1]).cuda()
   gt = torch.Tensor(frames[-1:]).cuda()
 
-  test_residual(x, gt, bc)
+  #test_residual(x, gt, bc)
+  test_multigrid(x, gt, bc)
