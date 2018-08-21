@@ -13,7 +13,8 @@ def check_eigenvalues(opt, model, logger, vis):
   Construct update matrix and calculate eigenvalues.
   Compare with finite difference. Plot eigenvalues.
   '''
-  w, v = utils.calculate_eigenvalues(model)
+  image_size = 16
+  w, v = utils.calculate_eigenvalues(model, image_size)
   np.save(os.path.join(opt.ckpt_path, 'eigenvalues.npy'), w)
   np.save(os.path.join(opt.ckpt_path, 'eigenvectors.npy'), v)
   logger.print('Eigenvalues:\n{}\n'.format(w))
@@ -21,7 +22,7 @@ def check_eigenvalues(opt, model, logger, vis):
   w = sorted(np.abs(w))
 
   # Finite difference
-  A, B = utils.construct_matrix(np.zeros((1, 4)), 16, utils.fd_step)
+  A, B = utils.construct_matrix(np.zeros((1, 4)), image_size, utils.fd_step)
   w_fd, v_fd = np.linalg.eig(B)
   w_fd = sorted(np.abs(w_fd))
   print('Finite difference eigenvalues:\n{}\n'.format(w_fd))
@@ -44,7 +45,7 @@ def evaluate(opt, model, data_loader, logger, vis=None):
   for key in state_dict.keys():
     logger.print('{}\n{}'.format(key, state_dict[key]))
 
-  metric = utils.Metrics(scale=model.n_operations, error_threshold=0.1)
+  metric = utils.Metrics(scale=model.n_operations, error_threshold=0.05)
   for step, data in enumerate(data_loader):
     bc, final, x = data['bc'], data['final'], data['x']
     error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps, opt.switch_to_fd)
@@ -55,7 +56,7 @@ def evaluate(opt, model, data_loader, logger, vis=None):
     if (step + 1) % opt.log_every == 0:
       print('Step {}'.format(step))
     if (step + 1) == 20:
-      # Hard code for now
+      # TODO: Hard code for now
       break
 
   results = metric.get_results()

@@ -9,12 +9,16 @@ class Metrics(object):
     self.error_threshold = error_threshold
     self.model_steps = []
     self.fd_steps = []
+    self.invalid = 0
 
   def update(self, error_dict):
     errors = to_numpy(error_dict['model errors'])
     fd_errors = to_numpy(error_dict['Jacobi errors'])
     batch_size, length = errors.shape
     for i in range(batch_size):
+      if np.all(fd_errors[i] >= self.error_threshold):
+        self.invalid += 1
+        continue
       model_step = np.nonzero(errors[i] < self.error_threshold)[0][0]
       fd_step = np.nonzero(fd_errors[i] < self.error_threshold)[0][0]
       model_step *= self.scale # scaling for model
@@ -22,6 +26,7 @@ class Metrics(object):
       self.fd_steps.append(fd_step)
 
   def get_results(self):
+    print('Invalid: {}/{}'.format(self.invalid, len(self.fd_steps) + self.invalid))
     self.model_steps = np.array(self.model_steps)
     self.fd_steps = np.array(self.fd_steps)
     ratios = self.model_steps / self.fd_steps
@@ -33,3 +38,4 @@ class Metrics(object):
   def reset(self):
     self.model_steps = []
     self.fd_steps = []
+    self.invalid = 0
