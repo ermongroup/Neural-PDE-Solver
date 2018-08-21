@@ -134,7 +134,7 @@ def construct_matrix(bc, image_size, iter_func):
   bc = torch.Tensor(bc).view(1, 4)
 
   # Find bias
-  x = torch.zeros(1, image_size, image_size)
+  x = torch.zeros(1, image_size + 2, image_size + 2)
   if torch.cuda.is_available():
     x = x.cuda()
     bc = bc.cuda()
@@ -143,15 +143,15 @@ def construct_matrix(bc, image_size, iter_func):
   bias = y[0, 1:-1, 1:-1].cpu().view(-1)
   # columns
   columns = []
-  for i in range(image_size - 2):
-    for j in range(image_size - 2):
+  for i in range(image_size):
+    for j in range(image_size):
       y = x.clone()
       y[0, i + 1, j + 1] = 1
       y = iter_func(y, bc).detach()
       c = y[0, 1:-1, 1:-1].cpu().view(-1) - bias
       columns.append(c)
   A = torch.stack(columns, dim=1)
-  length = (image_size - 2) ** 2
+  length = image_size ** 2
   assert A.size(0) == length
 
   # Add bias and last row
@@ -251,4 +251,4 @@ def multigrid(x, bc, n_layers, pre_smoothing, post_smoothing):
   '''
   f = torch.zeros_like(x).cuda()
   y = multigrid_step(x, bc, f, pre_smoothing, post_smoothing, n_layers)
-  pass
+  return y

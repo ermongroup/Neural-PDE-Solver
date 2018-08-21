@@ -35,7 +35,7 @@ class BaseArgs:
 
     # model
     self.parser.add_argument('--iterator', type=str, default='basic',
-                             choices=['jacobi', 'basic', 'unet', 'conv'],
+                             choices=['jacobi', 'basic', 'unet', 'conv', 'multigrid'],
                              help='specify iterator architecture')
     self.parser.add_argument('--n_evaluation_steps', type=int, default=100,
                              help='number of iterations to run when evaluating')
@@ -45,6 +45,8 @@ class BaseArgs:
                              help='last layer of iterator to make output [0, 1]')
     self.parser.add_argument('--conv_n_layers', type=int, default=1,
                              help='number of layers in the conv iterator')
+    self.parser.add_argument('--multigrid_n_layers', type=int, default=2,
+                             help='number of layers in the multigrid method')
 
   def parse(self):
     opt = self.parser.parse_args()
@@ -57,6 +59,8 @@ class BaseArgs:
       data_type = 'zero' if opt.zero_init else 'random'
       if opt.iterator == 'conv':
         iterator_name = '{}{}'.format(opt.iterator, opt.conv_n_layers)
+      elif opt.iterator == 'multigrid':
+        iterator_name = '{}{}'.format(opt.iterator, opt.multigrid_n_layers)
       else:
         iterator_name = opt.iterator
       opt.ckpt_name = '{}{}_{}_iter{}_{}_gt{}_{}{:.0e}'.format(\

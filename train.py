@@ -13,7 +13,7 @@ def main():
   # Validation
   val_opt = copy.deepcopy(opt)
   val_opt.is_train = False
-  val_opt.data_limit = 40
+  val_opt.data_limit = 20
   val_loader = get_data_loader(val_opt)
 
   model = HeatModel(opt)
@@ -34,7 +34,7 @@ def main():
     if opt.evaluate_every > 0 and (epoch + 1) % opt.evaluate_every == 0:
       model.setup(is_train=False)
       # Find eigenvalues
-      w, _ = utils.calculate_eigenvalues(model)
+      w, _ = utils.calculate_eigenvalues(model, image_size=opt.image_size)
       w = sorted(np.abs(w))
       eigenvalues = {'first': w[-2], 'second': w[-3], 'third': w[-4]}
       vis.add_scalar({'eigenvalues': eigenvalues}, epoch)

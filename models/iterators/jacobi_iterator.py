@@ -18,8 +18,18 @@ class JacobiIterator(nn.Module):
 
 
 class MultigridIterator(nn.Module):
-  def __init__(self):
+  def __init__(self, n_layers, pre_smoothing, post_smoothing):
     super(MultigridIterator, self).__init__()
+    self.act = None
+    self.n_layers = n_layers
+    self.pre_smoothing = pre_smoothing
+    self.post_smoothing = post_smoothing
 
   def forward(self, x, bc):
-    pass
+    '''
+    x: size (batch_size x 1 x image_size x image_size)
+    return: same size
+    '''
+    y = utils.multigrid(x.squeeze(1), bc, self.n_layers,
+                        self.pre_smoothing, self.post_smoothing)
+    return y.unsqueeze(1)

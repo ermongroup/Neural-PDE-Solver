@@ -17,6 +17,10 @@ class HeatModel(BaseModel):
       self.iterator = JacobiIterator().cuda()
       self.n_operations = 1
       self.is_train = False
+    elif opt.iterator == 'multigrid':
+      self.iterator = MultigridIterator(opt.multigrid_n_layers, 1, 1).cuda()
+      self.n_operations = 4 * (4 / 3)
+      self.is_train = False
     elif opt.iterator == 'basic':
       self.iterator = BasicIterator(opt.activation).cuda()
       self.n_operations = 1
