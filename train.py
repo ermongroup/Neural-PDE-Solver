@@ -5,6 +5,7 @@ import os
 from data import get_data_loader
 import utils
 from models.heat_model import HeatModel
+from test import evaluate
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=True, tb_dir='tb_train')
@@ -23,6 +24,7 @@ def main():
     model.setup(is_train=True)
     for step, data in enumerate(data_loader):
       bc, final, x = data['bc'], data['final'], data['x']
+      x = utils.initialize(x, bc, opt.initialization)
       loss_dict = model.train(x, final, bc)
       if (step + 1) % opt.log_every == 0:
         print('Epoch {}, step {}'.format(epoch, step))
@@ -41,20 +43,11 @@ def main():
       logger.print('Eigenvalues: {:.2f}, {:.3f}, {:.3f}, {:.3f}'\
                     .format(w[-1], w[-2], w[-3], w[-4]))
 
-      for step, data in enumerate(val_loader):
-        bc, final, x = data['bc'], data['final'], data['x']
-        error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps)
-        if step == 0:
-          # Plot the first 4 error curves
-          images = utils.plot_error_curves(error_dict, num=4)
-          vis.add_image({'errors': images}, epoch)
-        metric.update(error_dict)
-      results = metric.get_results()
+      # Evaluate entire val set
+      results, error_curves = evaluate(opt, model, val_loader, logger)
+      vis.add_image({'errors': error_curves[0]}, epoch + 1)
       vis.add_scalar({'steps': {'Jacobi': results['Jacobi'], 'model': results['model']},
-                      'ratio': results['ratio']}, epoch)
-      for key in results:
-        logger.print('{}: {}'.format(key, results[key]))
-      metric.reset()
+                      'ratio': results['ratio']}, epoch + 1)
 
     if (epoch + 1) % opt.save_every == 0 or epoch == opt.n_epochs - 1:
       model.save(opt.ckpt_path, epoch + 1)
