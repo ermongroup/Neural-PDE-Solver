@@ -1,7 +1,6 @@
 import argparse
 import os
 
-
 class BaseArgs:
   def __init__(self):
     self.is_train, self.split = None, None
@@ -47,8 +46,12 @@ class BaseArgs:
                              help='last layer of iterator to make output [0, 1]')
     self.parser.add_argument('--conv_n_layers', type=int, default=1,
                              help='number of layers in the conv iterator')
-    self.parser.add_argument('--multigrid_n_layers', type=int, default=2,
+    self.parser.add_argument('--mg_n_layers', type=int, default=2,
                              help='number of layers in the multigrid method')
+    self.parser.add_argument('--mg_pre_smoothing', type=int, default=2,
+                             help='number of pre-smoothing iterations in multigrid')
+    self.parser.add_argument('--mg_post_smoothing', type=int, default=2,
+                             help='number of post-smoothing iterations in multigrid')
 
   def parse(self):
     opt = self.parser.parse_args()
@@ -58,10 +61,15 @@ class BaseArgs:
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:
+      if opt.iterator == 'jacobi' or opt.iterator == 'multigrid':
+        # No training needed
+        opt.n_epochs = 1
+
+      # Checkpoint name
       if opt.iterator == 'conv':
         iterator_name = '{}{}'.format(opt.iterator, opt.conv_n_layers)
       elif opt.iterator == 'multigrid':
-        iterator_name = '{}{}'.format(opt.iterator, opt.multigrid_n_layers)
+        iterator_name = '{}{}'.format(opt.iterator, opt.mg_n_layers)
       else:
         iterator_name = opt.iterator
       opt.ckpt_name = '{}{}_{}_iter{}_{}_gt{}_{}{:.0e}'.format(\
@@ -71,7 +79,7 @@ class BaseArgs:
                           opt.optimizer, opt.lr_init)
       opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)
     else:
-      # Note: for testing, dset and ckpt image size might be different.
+      # Note: for testing, dset's and ckpt's image size might be different.
       opt.ckpt_path = opt.load_ckpt_path
 
     log = ['Arguments: ']

@@ -18,8 +18,9 @@ class HeatModel(BaseModel):
       self.n_operations = 1
       self.is_train = False
     elif opt.iterator == 'multigrid':
-      self.iterator = MultigridIterator(opt.multigrid_n_layers, 1, 1).cuda()
-      self.n_operations = 4 * (4 / 3)
+      self.iterator = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,
+                                        opt.mg_post_smoothing).cuda()
+      self.n_operations = (opt.mg_pre_smoothing + opt.mg_post_smoothing + 2) * (4 / 3)
       self.is_train = False
     elif opt.iterator == 'basic':
       self.iterator = BasicIterator(opt.activation).cuda()

@@ -7,7 +7,7 @@ import data
 import utils
 from models.heat_model import HeatModel
 
-def evaluate(opt, model, data_loader, logger, error_threshold, limit=None):
+def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
   '''
   Loop through the dataset and calculate evaluation metrics.
   '''
@@ -75,17 +75,17 @@ def test(opt, model, data_loader, logger, vis=None):
     logger.print('{}\n{}'.format(key, state_dict[key]))
 
   # random initialization
-  results, images = evaluate(opt, model, data_loader, logger, 0.05)
+  results, images = evaluate(opt, model, data_loader, logger)
   if vis is not None:
     for i, img in enumerate(images):
-      vis.add_image({opt.initialization + '_init': img}, i)
+      vis.add_image({'errors_{}_init'.format(opt.initialization): img}, i)
 
   # avg initialization
   opt.initialization = 'avg'
-  results, images = evaluate(opt, model, data_loader, logger, 0.05)
+  results, images = evaluate(opt, model, data_loader, logger)
   if vis is not None:
     for i, img in enumerate(images):
-      vis.add_image({'avg_init': img}, i)
+      vis.add_image({'errors_avg_init': img}, i)
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')
