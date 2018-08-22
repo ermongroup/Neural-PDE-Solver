@@ -118,6 +118,25 @@ def fd_iter(x, bc, error_threshold, max_iters=100000):
       break
   return x
 
+def calculate_errors(x, bc, gt, iter_func, n_steps, starting_error):
+  '''
+  Run iterations and calculate errors.
+  '''
+  batch_size = bc.size(0)
+  errors = [starting_error.unsqueeze(1)]
+  x = x.detach()
+  for i in range(n_steps):
+    x = iter_func(x, bc).detach()
+    e = l2_error(x, gt).cpu() / starting_error # Normalize by starting_error
+    if (e < 0.001).all().item():
+      # Pad with zeros
+      zeros = torch.zeros(batch_size, n_steps - i)
+      errors.append(zeros)
+      break
+    errors.append(e.unsqueeze(1))
+  errors = torch.cat(errors, dim=1)
+  return errors
+
 def plot_error_curves(results, num=None):
   '''
   Plot model and Jacobi error curves.

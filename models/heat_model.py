@@ -117,23 +117,11 @@ class HeatModel(BaseModel):
     results = {}
 
     # Jacobi
-    fd_errors = [starting_error]
-    x_fd = x.detach()
-    for i in range(n_steps):
-      x_fd = utils.fd_step(x_fd, bc).detach()
-      fd_errors.append(utils.l2_error(x_fd, gt).cpu())
-    fd_errors = torch.stack(fd_errors, dim=1)
-    fd_errors = fd_errors / fd_errors[:, :1] # Normalize by starting_error
+    fd_errors = utils.calculate_errors(x, bc, gt, utils.fd_step, n_steps, starting_error)
     results['Jacobi errors'] = fd_errors
 
     # error of model
-    errors = [starting_error]
-    x_model = x.detach()
-    for i in range(n_steps):
-      x_model = self.iter_step(x_model, bc).detach()
-      errors.append(utils.l2_error(x_model, gt).cpu())
-    errors = torch.stack(errors, dim=1)
-    errors = errors / errors[:, :1] # Normalize by starting_error
+    errors = utils.calculate_errors(x, bc, gt, self.iter_step, n_steps, starting_error)
     results['model errors'] = errors
 
     # Run model until switch_to_fd, then switch to fd
