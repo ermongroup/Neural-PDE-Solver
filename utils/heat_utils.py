@@ -123,7 +123,7 @@ def calculate_errors(x, bc, gt, iter_func, n_steps, starting_error):
   Run iterations and calculate errors.
   '''
   batch_size = bc.size(0)
-  errors = [starting_error.unsqueeze(1)]
+  errors = [torch.ones(batch_size, 1)]
   x = x.detach()
   for i in range(n_steps):
     x = iter_func(x, bc).detach()
@@ -135,7 +135,7 @@ def calculate_errors(x, bc, gt, iter_func, n_steps, starting_error):
       break
     errors.append(e.unsqueeze(1))
   errors = torch.cat(errors, dim=1)
-  return errors
+  return errors, x
 
 def plot_error_curves(results, num=None):
   '''

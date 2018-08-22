@@ -117,25 +117,21 @@ class HeatModel(BaseModel):
     results = {}
 
     # Jacobi
-    fd_errors = utils.calculate_errors(x, bc, gt, utils.fd_step, n_steps, starting_error)
+    fd_errors, _ = utils.calculate_errors(x, bc, gt, utils.fd_step, n_steps, starting_error)
     results['Jacobi errors'] = fd_errors
 
     # error of model
-    errors = utils.calculate_errors(x, bc, gt, self.iter_step, n_steps, starting_error)
+    errors, _ = utils.calculate_errors(x, bc, gt, self.iter_step, n_steps, starting_error)
     results['model errors'] = errors
 
     # Run model until switch_to_fd, then switch to fd
-    errors = [starting_error]
     x_model = x.detach()
     if switch_to_fd > 0:
-      for i in range(switch_to_fd):
-        x_model = self.iter_step(x_model, bc).detach()
-        errors.append(utils.l2_error(x_model, gt).cpu())
-      for j in range(n_steps - switch_to_fd):
-        x_model = utils.fd_step(x_model, bc).detach()
-        errors.append(utils.l2_error(x_model, gt).cpu())
-      errors = torch.stack(errors, dim=1)
-      errors = errors / errors[:, :1]
+      errors, x = utils.calculate_errors(x, bc, gt, self.iter_step,
+                                         switch_to_fd, starting_error)
+      errors2, _ = utils.calculate_errors(x, bc, gt, utils.fd_step,
+                                          n_steps - switch_to_fd, starting_error)
+      errors = torch.cat([errors, errors2[:, 1:]], dim=1)
       results['mix errors'] = errors
 
     return results

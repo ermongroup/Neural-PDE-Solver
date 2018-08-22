@@ -7,11 +7,11 @@ import data
 import utils
 from models.heat_model import HeatModel
 
-def evaluate(opt, model, data_loader, logger, limit=None):
+def evaluate(opt, model, data_loader, logger, error_threshold, limit=None):
   '''
   Loop through the dataset and calculate evaluation metrics.
   '''
-  metric = utils.Metrics(scale=model.n_operations, error_threshold=0.05)
+  metric = utils.Metrics(scale=model.n_operations, error_threshold=error_threshold)
   images = []
 
   for step, data in enumerate(data_loader):
@@ -28,7 +28,6 @@ def evaluate(opt, model, data_loader, logger, limit=None):
       images.append(img)
     if (step + 1) % opt.log_every == 0:
       print('Step {}'.format(step + 1))
-
     if limit is not None and (step + 1) == limit:
       break
 
@@ -37,7 +36,6 @@ def evaluate(opt, model, data_loader, logger, limit=None):
   for key in results:
     logger.print('{}: {}'.format(key, results[key]))
   metric.reset()
-
   return results, images
 
 def check_eigenvalues(opt, model, logger, vis):
@@ -76,10 +74,18 @@ def test(opt, model, data_loader, logger, vis=None):
   for key in state_dict.keys():
     logger.print('{}\n{}'.format(key, state_dict[key]))
 
-  results, images = evaluate(opt, model, data_loader, logger)
+  # random initialization
+  results, images = evaluate(opt, model, data_loader, logger, 0.05)
   if vis is not None:
     for i, img in enumerate(images):
-      vis.add_image({'errors': img}, i)
+      vis.add_image({opt.initialization + '_init': img}, i)
+
+  # avg initialization
+  opt.initialization = 'avg'
+  results, images = evaluate(opt, model, data_loader, logger, 0.05)
+  if vis is not None:
+    for i, img in enumerate(images):
+      vis.add_image({'avg_init': img}, i)
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')
