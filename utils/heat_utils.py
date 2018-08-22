@@ -120,7 +120,7 @@ def fd_iter(x, bc, error_threshold, max_iters=100000):
 
 def calculate_errors(x, bc, gt, iter_func, n_steps, starting_error):
   '''
-  Run iterations and calculate errors.
+  Run iterations and calculate errors, relative to starting_error.
   '''
   batch_size = bc.size(0)
   errors = [torch.ones(batch_size, 1)]
@@ -128,8 +128,8 @@ def calculate_errors(x, bc, gt, iter_func, n_steps, starting_error):
   for i in range(n_steps):
     x = iter_func(x, bc).detach()
     e = l2_error(x, gt).cpu() / starting_error # Normalize by starting_error
-    if (e < 0.001).all().item():
-      # Pad with zeros
+    if (e < 0.002).all().item():
+      # Pad with zeros when error is close to 0
       zeros = torch.zeros(batch_size, n_steps - i)
       errors.append(zeros)
       break
@@ -235,57 +235,4 @@ def interpolation(x, bc):
   # align_corners True to preserve boundaries
   y = F.interpolate(x.unsqueeze(1), size=new_size, mode='bilinear', align_corners=True)
   y = y.squeeze(1)
-  return y
-
-def multigrid_step(x, bc, f, pre_smoothing, post_smoothing, step):
-  '''
-  One layer of multigrid. Recursive function.
-  Find solution x to Ax + b = f.
-  Algorithm:
-    - Update rule: u^{k+1} = S u^{k} + b - f
-    - Residual r^{k} = u^{k+1} - u^{k} = A u^{k} + b - f
-    - Solve A e^{k} = - r^{k} recursively.
-    - u' = u^{k} + e^{k}
-  '''
-  if step == 0:
-    return None
-
-  # Pre smoothing
-  x = set_boundary(x, bc)
-  for i in range(pre_smoothing):
-    x = fd_step(x, bc)
-    x = x - f
-
-  # Calculate residual
-  y = fd_step(x, bc)
-  r = y - x
-
-  # Solve e: A e = -r
-  # Restriction: downsample by 2
-  zeros_bc = torch.zeros(1, 4)
-  r_sub = restriction(r, zeros_bc)
-
-  # Recursive
-  ek_sub = multigrid_step(r_sub, zeros_bc, - r_sub, pre_smoothing, post_smoothing, step - 1)
-
-  # Upsample
-  if ek_sub is not None:
-    ek = interpolation(ek_sub, zeros_bc)
-    # Add to x
-    x = x + ek
-
-  # Post smoothing
-  x = set_boundary(x, bc)
-  for i in range(post_smoothing):
-    x = fd_step(x, bc)
-    x = x - f
-
-  return x
-
-def multigrid(x, bc, n_layers, pre_smoothing, post_smoothing):
-  '''
-  Multigrid Jacobi.
-  '''
-  f = torch.zeros_like(x).cuda()
-  y = multigrid_step(x, bc, f, pre_smoothing, post_smoothing, n_layers)
   return y

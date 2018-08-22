@@ -34,8 +34,10 @@ def test_residual(x, gt, bc):
 
 
 def test_multigrid(x, gt, bc):
+  from models.iterators import MultigridIterator
   print('Multigrid')
-  y = utils.multigrid(x, bc, 4, 1, 100)
+  m = MultigridIterator(3, 4, 4)
+  y = m(x.unsqueeze(1), bc)
 
 if __name__ == '__main__':
   data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/31x31')
