@@ -12,8 +12,10 @@ python train.py \
   --max_iter_steps_from_gt 0 \
   --n_evaluation_steps 400 \
   --activation clamp \
-  --iterator conv \
-  --conv_n_layers 1 \
-  --multigrid_n_layers 4 \
+  --iterator multigrid \
+  --conv_n_layers 3 \
+  --mg_n_layers 3 \
+  --mg_pre_smoothing 4 \
+  --mg_post_smoothing 4 \
   --initialization random \
   --ckpt_name ''

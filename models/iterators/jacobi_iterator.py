@@ -16,10 +16,56 @@ class JacobiIterator(nn.Module):
     '''
     return utils.fd_step(x.squeeze(1), bc).unsqueeze(1)
 
-
 class MultigridIterator(nn.Module):
+  '''
+  Multigrid.
+  '''
   def __init__(self, n_layers, pre_smoothing, post_smoothing):
     super(MultigridIterator, self).__init__()
+    self.act = None
+    self.n_layers = n_layers
+    self.pre_smoothing = pre_smoothing
+    self.post_smoothing = post_smoothing
+
+  def multigrid_step(self, x, bc, step):
+    '''
+    One layer of multigrid. Recursive function.
+    Find solution x to Ax + b = 0.
+    '''
+    # Pre smoothing
+    for i in range(self.pre_smoothing):
+      x = utils.fd_step(x, bc)
+
+    if step > 1:
+      # Downsample
+      x_sub = utils.restriction(x, bc)
+      # Refine x_sub recursively
+      x_sub = self.multigrid_step(x_sub, bc, step - 1)
+      # Upsample
+      x = utils.interpolation(x_sub, bc)
+
+    # Post smoothing
+    for i in range(self.post_smoothing):
+      x = utils.fd_step(x, bc)
+    return x
+
+  def forward(self, x, bc):
+    '''
+    x: size (batch_size x 1 x image_size x image_size)
+    return: same size
+    '''
+    x = x.squeeze(1)
+    y = self.multigrid_step(x, bc, self.n_layers)
+    return y.unsqueeze(1)
+
+
+class MultigridResidualIterator(nn.Module):
+  '''
+  Multigrid method with residual estimation.
+  Doesn't work well in heat transfer since the residual isn't smooth near boundaries.
+  '''
+  def __init__(self, n_layers, pre_smoothing, post_smoothing):
+    super(MultigridResidualIterator, self).__init__()
     self.act = None
     self.n_layers = n_layers
     self.pre_smoothing = pre_smoothing

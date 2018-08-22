@@ -234,5 +234,5 @@ def interpolation(x, bc):
   new_size = image_size * 2 - 1
   # align_corners True to preserve boundaries
   y = F.interpolate(x.unsqueeze(1), size=new_size, mode='bilinear', align_corners=True)
-  y = y.squeeze(1)
+  y = set_boundary(y.squeeze(1), bc)
   return y

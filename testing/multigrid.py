@@ -42,7 +42,7 @@ def test_multigrid(x, gt, bc):
 if __name__ == '__main__':
   data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/31x31')
   bc = np.load(os.path.join(data_dir, 'bc.npy'))[0][0:1] / 100
-  bc = torch.Tensor(bc)
+  bc = torch.Tensor(bc).cuda()
   frames = np.load(os.path.join(data_dir, 'frames', '0000.npy'))[0] / 100
   x = torch.Tensor(frames[0:1]).cuda()
   gt = torch.Tensor(frames[-1:]).cuda()
