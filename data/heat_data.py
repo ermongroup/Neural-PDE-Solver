@@ -5,7 +5,7 @@ import torch
 import torch.utils.data as data
 
 
-def make_dataset(root, is_train, max_temp, random_start, zero_init, data_limit):
+def make_dataset(root, is_train, max_temp, data_limit):
   bc = np.load(os.path.join(root, 'bc.npy'))
   bc /= max_temp
   total_instances = len(bc)
@@ -25,22 +25,19 @@ def make_dataset(root, is_train, max_temp, random_start, zero_init, data_limit):
   for i in indices:
     path = os.path.join(root, 'frames', '{:04d}.npy'.format(i))
     frames = np.load(path) # batch_size x length x image_size x image_size
-    if not random_start:
-      # Take first and last frame only, (batch_size x 2 x image_size x image_size)
-      frames = np.stack([frames[:, 0], frames[:, -1]], axis=1)
+    # Take first and last frame only
+    # Size: (batch_size x 2 x image_size x image_size)
+    frames = np.stack([frames[:, 0], frames[:, -1]], axis=1)
     frames /= max_temp # Normalize
     data.append(frames)
   return bc, data
 
 class HeatDataset(data.Dataset):
-  def __init__(self, root, is_train, max_temp, random_start, zero_init, data_limit):
-    random_start = False # not used anymore
-    self.bc, self.data = make_dataset(root, is_train, max_temp, random_start,
-                                      zero_init, data_limit)
+  def __init__(self, root, is_train, max_temp, data_limit):
+    self.bc, self.data = make_dataset(root, is_train, max_temp, data_limit)
 
     self.n_instances, self.batch_size, _ = self.bc.shape
     self.is_train = is_train
-    self.zero_init = zero_init
 
   def rotate(self, bc, x, final):
     ''' Random rotate '''
@@ -72,13 +69,6 @@ class HeatDataset(data.Dataset):
     x = torch.Tensor(x)
     final = torch.Tensor(final)
     bc, x, final = torch.Tensor(bc), torch.Tensor(x), torch.Tensor(final)
-
-    image_size = x.size(0)
-    if self.zero_init:
-      x[1:-1, 1:-1] = 0
-    elif self.is_train:
-      # only training
-      x[1:-1, 1:-1] = torch.rand(image_size - 2, image_size - 2)
 
     results = {'bc': bc, 'final': final, 'x': x}
     return results

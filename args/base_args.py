@@ -17,7 +17,9 @@ class BaseArgs:
     self.parser.add_argument('--image_size', type=int, default=64)
     # Specific
     self.parser.add_argument('--max_temp', type=int, default=100)
-    self.parser.add_argument('--zero_init', type=int, default=0)
+    self.parser.add_argument('--initialization', type=str, default='random',
+                             choices=['random', 'zero', 'avg'],
+                             help='method to initialize the inner part of the data')
     self.parser.add_argument('--data_limit', type=int, default=-1, help='limit amount of data when testing')
 
     # ckpt and logging
@@ -56,7 +58,6 @@ class BaseArgs:
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:
-      data_type = 'zero' if opt.zero_init else 'random'
       if opt.iterator == 'conv':
         iterator_name = '{}{}'.format(opt.iterator, opt.conv_n_layers)
       elif opt.iterator == 'multigrid':
@@ -65,7 +66,7 @@ class BaseArgs:
         iterator_name = opt.iterator
       opt.ckpt_name = '{}{}_{}_iter{}_{}_gt{}_{}{:.0e}'.format(\
                           (opt.ckpt_name + '_') if opt.ckpt_name != '' else '',
-                          iterator_name, data_type, opt.max_iter_steps,
+                          iterator_name, opt.initialization, opt.max_iter_steps,
                           opt.max_iter_steps_from_gt, opt.lambda_gt,
                           opt.optimizer, opt.lr_init)
       opt.ckpt_path = os.path.join(opt.ckpt_dir, opt.dset_name, image_size_str, opt.ckpt_name)

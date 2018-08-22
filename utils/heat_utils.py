@@ -46,6 +46,24 @@ def pad_boundary(x, bc):
   y = set_boundary(y, bc)
   return y
 
+def initialize(x, bc, initialization):
+  '''
+  Initialize data x.
+  x: batch_size x H x W
+  bc: batch_size x 4
+  '''
+  batch_size, image_size, _ = x.size()
+  # Initialize inner part
+  if initialization == 'zero':
+    x[:, 1:-1, 1:-1] = 0
+  elif initialization == 'random':
+    x[:, 1:-1, 1:-1] = torch.rand(batch_size, image_size - 2, image_size - 2)
+  elif initialization == 'avg':
+    x[:, 1:-1, 1:-1] = torch.mean(bc, dim=1).view(batch_size, 1, 1)
+  else:
+    raise NotImplementedError
+  return x
+
 def fd_step(x, bc):
   '''
   One update of Jacobi iterative method.
