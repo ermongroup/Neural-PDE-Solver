@@ -4,7 +4,7 @@ import torch.nn as nn
 import utils
 
 class Iterator(nn.Module):
-  def __init__(self, act):
+  def __init__(self, act=None):
     super(Iterator, self).__init__()
     self.act = act
     # Finite difference kernels
@@ -22,6 +22,13 @@ class Iterator(nn.Module):
     else:
       raise NotImplementedError
     return x
+
+  def iter_step(self, x, bc):
+    '''
+    One step of iteration.
+    x: (batch_size, image_size, image_size)
+    '''
+    return self.forward(x.unsqueeze(1), bc).squeeze(1)
 
   def forward(self, x, bc):
     '''

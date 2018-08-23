@@ -1,13 +1,12 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
+from .iterator import Iterator
 import utils
 
-class JacobiIterator(nn.Module):
+class JacobiIterator(Iterator):
   def __init__(self):
     super(JacobiIterator, self).__init__()
-    self.act = None
 
   def forward(self, x, bc):
     '''
@@ -16,13 +15,12 @@ class JacobiIterator(nn.Module):
     '''
     return utils.fd_step(x.squeeze(1), bc).unsqueeze(1)
 
-class MultigridIterator(nn.Module):
+class MultigridIterator(Iterator):
   '''
   Multigrid.
   '''
   def __init__(self, n_layers, pre_smoothing, post_smoothing):
     super(MultigridIterator, self).__init__()
-    self.act = None
     self.n_layers = n_layers
     self.pre_smoothing = pre_smoothing
     self.post_smoothing = post_smoothing
@@ -59,14 +57,13 @@ class MultigridIterator(nn.Module):
     return y.unsqueeze(1)
 
 
-class MultigridResidualIterator(nn.Module):
+class MultigridResidualIterator(Iterator):
   '''
   Multigrid method with residual estimation.
   Doesn't work well in heat transfer since the residual isn't smooth near boundaries.
   '''
   def __init__(self, n_layers, pre_smoothing, post_smoothing):
     super(MultigridResidualIterator, self).__init__()
-    self.act = None
     self.n_layers = n_layers
     self.pre_smoothing = pre_smoothing
     self.post_smoothing = post_smoothing

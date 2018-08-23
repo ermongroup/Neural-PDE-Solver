@@ -40,8 +40,6 @@ class BaseArgs:
                              help='specify iterator architecture')
     self.parser.add_argument('--n_evaluation_steps', type=int, default=100,
                              help='number of iterations to run when evaluating')
-    self.parser.add_argument('--switch_to_fd', type=int, default=-1,
-                             help='when to switch to fd, -1 if no switch')
     self.parser.add_argument('--activation', type=str, default='clamp',
                              help='last layer of iterator to make output [0, 1]')
     self.parser.add_argument('--conv_n_layers', type=int, default=1,

@@ -19,7 +19,7 @@ def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
     if opt.initialization != 'random':
       # Test time: do not change data if 'random'
       x = utils.initialize(x, bc, opt.initialization)
-    error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps, opt.switch_to_fd)
+    error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps)
     # Update metric
     metric.update(error_dict)
 

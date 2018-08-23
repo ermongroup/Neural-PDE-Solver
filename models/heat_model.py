@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 
 from .base_model import BaseModel
@@ -13,6 +12,7 @@ class HeatModel(BaseModel):
     super(HeatModel, self).__init__()
     self.is_train = opt.is_train
 
+    # Iterator
     if opt.iterator == 'jacobi':
       self.iterator = JacobiIterator().cuda()
       self.n_operations = 1
@@ -31,10 +31,19 @@ class HeatModel(BaseModel):
     elif opt.iterator == 'unet':
       self.iterator = UNetIterator(opt.activation, opt.mg_n_layers,
                                    opt.mg_pre_smoothing, opt.mg_post_smoothing).cuda()
-      self.n_operations = (opt.mg_pre_smoothing + opt.mg_post_smoothing + 2) * (4 / 3)
+      self.n_operations = 1 # Compare to multigrid
     else:
       raise NotImplementedError
     self.nets['iterator'] = self.iterator
+
+    # Compare to Jacobi methods
+    if opt.iterator == 'conv' or opt.iterator == 'basic':
+      self.compare_model = JacobiIterator()
+    elif opt.iterator == 'unet':
+      self.compare_model = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,
+                                             opt.mg_post_smoothing)
+    else:
+      self.compare_model = None
 
     if self.is_train:
       self.criterion_mse = nn.MSELoss().cuda()
@@ -95,9 +104,7 @@ class HeatModel(BaseModel):
 
   def iter_step(self, x, bc):
     ''' Perform one iteration step. '''
-    y = self.iterator(x.unsqueeze(1), bc)
-    y = y.squeeze(1)
-    return y
+    return self.iterator.iter_step(x, bc)
 
   def get_activation(self):
     return self.iterator.act
@@ -106,7 +113,7 @@ class HeatModel(BaseModel):
     ''' Change activation function, used to calculate eigenvalues '''
     self.iterator.act = act
 
-  def evaluate(self, x, gt, bc, n_steps, switch_to_fd=-1):
+  def evaluate(self, x, gt, bc, n_steps):
     '''
     x, gt: size (batch_size x image_size x image_size)
     Run Jacobi and our iterator for n_steps iterations, and calculate errors.
@@ -118,22 +125,14 @@ class HeatModel(BaseModel):
     starting_error = utils.l2_error(x, gt).cpu()
     results = {}
 
-    # Jacobi
-    fd_errors, _ = utils.calculate_errors(x, bc, gt, utils.fd_step, n_steps, starting_error)
-    results['Jacobi errors'] = fd_errors
+    if self.compare_model is not None:
+      # Jacobi
+      fd_errors, _ = utils.calculate_errors(x, bc, gt, self.compare_model.iter_step,
+                                            n_steps, starting_error)
+      results['Jacobi errors'] = fd_errors
 
     # error of model
     errors, _ = utils.calculate_errors(x, bc, gt, self.iter_step, n_steps, starting_error)
     results['model errors'] = errors
-
-    # Run model until switch_to_fd, then switch to fd
-    x_model = x.detach()
-    if switch_to_fd > 0:
-      errors, x = utils.calculate_errors(x, bc, gt, self.iter_step,
-                                         switch_to_fd, starting_error)
-      errors2, _ = utils.calculate_errors(x, bc, gt, utils.fd_step,
-                                          n_steps - switch_to_fd, starting_error)
-      errors = torch.cat([errors, errors2[:, 1:]], dim=1)
-      results['mix errors'] = errors
 
     return results
