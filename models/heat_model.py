@@ -25,12 +25,13 @@ class HeatModel(BaseModel):
     elif opt.iterator == 'basic':
       self.iterator = BasicIterator(opt.activation).cuda()
       self.n_operations = 1
-    elif opt.iterator == 'unet':
-      self.iterator = UNetIterator(opt.activation).cuda()
-      self.n_operations = 3
     elif opt.iterator == 'conv':
       self.iterator = ConvIterator(opt.activation, opt.conv_n_layers).cuda()
       self.n_operations = 1 + opt.conv_n_layers
+    elif opt.iterator == 'unet':
+      self.iterator = UNetIterator(opt.activation, opt.mg_n_layers,
+                                   opt.mg_pre_smoothing, opt.mg_post_smoothing).cuda()
+      self.n_operations = (opt.mg_pre_smoothing + opt.mg_post_smoothing + 2) * (4 / 3)
     else:
       raise NotImplementedError
     self.nets['iterator'] = self.iterator
