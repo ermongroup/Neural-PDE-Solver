@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 
 import utils
+from models.iterators import MultigridIterator
 
 parser = argparse.ArgumentParser()
 
@@ -50,12 +51,20 @@ def main(opt):
       y = x.cpu().numpy()
       frames.append(y)
 
-    # Find ground truth
     # Initialize with average of boundary conditions
     x[:, 1:-1, 1:-1] = bc.mean(dim=1).view(-1, 1, 1)
-    error_threshold = 0.001
+
+    # Use Multigrid model to initialize
+    model = MultigridIterator(4, 4, 4)
+    for i in range(50):
+      x = model.iter_step(x, bc)
+    error = utils.fd_error(x)
+    largest_error = error.max().item()
+    print('largest error {}'.format(largest_error))
+
+    error_threshold = 0.005
     max_iters = 20000
-    # Iterate until ground truth
+    # Iterate with Jacobi until ground truth
     for i in range(max_iters):
       x = utils.fd_step(x, bc)
       error = utils.fd_error(x)
