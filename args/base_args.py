@@ -66,7 +66,7 @@ class BaseArgs:
       # Checkpoint name
       if opt.iterator == 'conv':
         iterator_name = '{}{}'.format(opt.iterator, opt.conv_n_layers)
-      elif opt.iterator == 'multigrid':
+      elif opt.iterator == 'multigrid' or opt.iterator == 'unet':
         iterator_name = '{}{}'.format(opt.iterator, opt.mg_n_layers)
       else:
         iterator_name = opt.iterator

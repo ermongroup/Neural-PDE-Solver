@@ -62,7 +62,7 @@ def main(opt):
     largest_error = error.max().item()
     print('largest error {}'.format(largest_error))
 
-    error_threshold = 0.005
+    error_threshold = 0.001
     max_iters = 20000
     # Iterate with Jacobi until ground truth
     for i in range(max_iters):

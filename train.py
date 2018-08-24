@@ -36,7 +36,7 @@ def main():
     if opt.evaluate_every > 0 and (epoch + 1) % opt.evaluate_every == 0:
       model.setup(is_train=False)
       # Find eigenvalues
-      w, _ = utils.calculate_eigenvalues(model, image_size=opt.image_size)
+      w, _ = utils.calculate_eigenvalues(model, image_size=15)
       w = sorted(np.abs(w))
       eigenvalues = {'first': w[-2], 'second': w[-3], 'third': w[-4]}
       vis.add_scalar({'eigenvalues': eigenvalues}, epoch)

@@ -51,7 +51,7 @@ def check_eigenvalues(opt, model, logger, vis):
   w = sorted(np.abs(w))
 
   # Finite difference
-  A, B = utils.construct_matrix(np.zeros((1, 4)), image_size, utils.fd_step)
+  A, B = utils.construct_matrix(np.zeros((1, 4)), image_size, model.compare_model.iter_step)
   w_fd, v_fd = np.linalg.eig(B)
   w_fd = sorted(np.abs(w_fd))
   print('Finite difference eigenvalues:\n{}\n'.format(w_fd))
