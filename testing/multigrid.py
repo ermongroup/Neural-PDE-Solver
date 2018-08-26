@@ -10,7 +10,7 @@ def test_residual(x, gt, bc):
   residual = y - x
   e = gt - x
   # Ae = -r
-  A = utils.loss_kernel.view(1, 1, 3, 3) * (-0.25)
+  A = utils.loss_kernel.view(1, 1, 3, 3)
   Ae = F.conv2d(e.unsqueeze(1), A).squeeze(1)
   # z should be all zeros
   z = Ae + residual[:, 1:-1, 1:-1]
@@ -47,5 +47,5 @@ if __name__ == '__main__':
   x = torch.Tensor(frames[0:1]).cuda()
   gt = torch.Tensor(frames[-1:]).cuda()
 
-  #test_residual(x, gt, bc)
+  test_residual(x, gt, bc)
   test_multigrid(x, gt, bc)

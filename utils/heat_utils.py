@@ -6,20 +6,20 @@ import torchvision
 from .misc import plot
 
 # Kernels
-fd_update_kernel = np.array([[0, 1, 0],
-                             [1, 0, 1],
-                             [0, 1, 0]]) * 0.25
+update_kernel = np.array([[0, 1, 0],
+                          [1, 0, 1],
+                          [0, 1, 0]]) * 0.25
 
-fd_loss_kernel = np.array([[0, -1, 0],
-                           [-1, 4, -1],
-                           [0, -1, 0]])
+loss_kernel = np.array([[0, 1, 0],
+                        [1, -4, 1],
+                        [0, 1, 0]]) * 0.25
 
 restriction_kernel = np.array([[0, 1, 0],
                                [1, 4, 1],
                                [0, 1, 0]]) / 8.0
 
-update_kernel = torch.Tensor(fd_update_kernel)
-loss_kernel = torch.Tensor(fd_loss_kernel)
+update_kernel = torch.Tensor(update_kernel)
+loss_kernel = torch.Tensor(loss_kernel)
 restriction_kernel = torch.Tensor(restriction_kernel)
 if torch.cuda.is_available():
   update_kernel = update_kernel.cuda()
@@ -64,7 +64,7 @@ def initialize(x, bc, initialization):
     raise NotImplementedError
   return x
 
-def fd_step(x, bc):
+def fd_step(x, bc, f=0):
   '''
   One update of Jacobi iterative method.
   x: torch tensor of size (batch_size x H x W)
@@ -74,14 +74,16 @@ def fd_step(x, bc):
   y = F.conv2d(x.unsqueeze(1), update_kernel.view(1, 1, 3, 3))
   # Add boundaries back
   y = F.pad(y, (1, 1, 1, 1)).view_as(x)
-  y = set_boundary(y, bc)
+  y = set_boundary(y, bc) - f
   return y
 
-def fd_error(x, aggregate='max'):
+def fd_error(x, f, aggregate='max'):
   '''
   Use loss kernel to calculate absolute error.
+  l = Au - f.
   '''
   l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3))
+  l = l - f[:, 1:-1, 1:-1]
   l = l.view(l.size(0), -1)
   if aggregate == 'max':
     error = torch.abs(l).max(dim=1)[0]

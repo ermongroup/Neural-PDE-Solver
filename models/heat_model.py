@@ -37,7 +37,7 @@ class HeatModel(BaseModel):
     self.nets['iterator'] = self.iterator
 
     # Compare to Jacobi methods
-    if opt.iterator == 'conv' or opt.iterator == 'basic':
+    if opt.iterator == 'conv' or opt.iterator == 'basic' or opt.iterator == 'multigrid':
       self.compare_model = JacobiIterator()
     elif opt.iterator == 'unet':
       self.compare_model = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,

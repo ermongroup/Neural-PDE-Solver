@@ -8,8 +8,8 @@ class Iterator(nn.Module):
     super(Iterator, self).__init__()
     self.act = act
     # Finite difference kernels
-    self.fd_update_kernel = torch.Tensor(utils.fd_update_kernel).view(1, 1, 3, 3).cuda()
-    self.fd_loss_kernel = torch.Tensor(utils.fd_loss_kernel * (-0.25)).view(1, 1, 3, 3).cuda()
+    self.fd_update_kernel = utils.update_kernel.view(1, 1, 3, 3).cuda()
+    self.fd_loss_kernel = utils.loss_kernel.view(1, 1, 3, 3).cuda()
 
   def activation(self, x):
     ''' Apply activation '''
@@ -45,7 +45,7 @@ class BasicIterator(Iterator):
     self.layers = nn.Sequential(
                       nn.Conv2d(1, 1, 3, bias=False))
     # Initialize
-    initial_weight = torch.Tensor(utils.fd_update_kernel).view(1, 1, 3, 3)
+    initial_weight = utils.update_kernel.view(1, 1, 3, 3)
     self.layers[0].weight = nn.Parameter(initial_weight)
 
   def forward(self, x, bc):
