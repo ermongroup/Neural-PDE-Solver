@@ -43,6 +43,9 @@ def check_eigenvalues(opt, model, logger, vis):
   Construct update matrix and calculate eigenvalues.
   Compare with finite difference. Plot eigenvalues.
   '''
+  if opt.iterator == 'cg':
+    return
+
   image_size = 15
   w, v = utils.calculate_eigenvalues(model, image_size)
   np.save(os.path.join(opt.ckpt_path, 'eigenvalues.npy'), w)
@@ -95,8 +98,9 @@ def main():
   model = HeatModel(model_opt)
   logger.print('Loading data from {}'.format(opt.dset_path))
 
-  # In case I forget
+  # For convenience
   opt.initialization = model_opt.initialization
+  opt.iterator = model_opt.iterator
   data_loader = data.get_data_loader(opt)
 
   for epoch in opt.which_epochs:

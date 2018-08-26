@@ -36,7 +36,7 @@ class BaseArgs:
 
     # model
     self.parser.add_argument('--iterator', type=str, default='basic',
-                             choices=['jacobi', 'basic', 'unet', 'conv', 'multigrid'],
+                             choices=['jacobi', 'basic', 'unet', 'conv', 'multigrid', 'cg'],
                              help='specify iterator architecture')
     self.parser.add_argument('--n_evaluation_steps', type=int, default=100,
                              help='number of iterations to run when evaluating')
@@ -50,6 +50,8 @@ class BaseArgs:
                              help='number of pre-smoothing iterations in multigrid')
     self.parser.add_argument('--mg_post_smoothing', type=int, default=2,
                              help='number of post-smoothing iterations in multigrid')
+    self.parser.add_argument('--cg_n_iters', type=int, default=4,
+                             help='number of iterations in CG')
 
   def parse(self):
     opt = self.parser.parse_args()
@@ -59,7 +61,7 @@ class BaseArgs:
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:
-      if opt.iterator == 'jacobi' or opt.iterator == 'multigrid':
+      if opt.iterator == 'jacobi' or opt.iterator == 'multigrid' or opt.iterator == 'cg':
         # No training needed
         opt.n_epochs = 1
 

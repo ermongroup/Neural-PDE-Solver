@@ -79,3 +79,11 @@ def gaussian(image_size):
   y = np.exp(-(y ** 2) / 2 / (sd ** 2))
   kernel = x[:, np.newaxis] * y[np.newaxis, :]
   return kernel
+
+def dot_product(x, y):
+  '''
+  Batch dot product.
+  '''
+  x = x.view(x.size(0), -1)
+  y = y.view(y.size(0), -1)
+  return torch.sum(x * y, dim=1)

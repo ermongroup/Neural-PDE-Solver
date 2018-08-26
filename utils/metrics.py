@@ -16,14 +16,15 @@ class Metrics(object):
     fd_errors = to_numpy(error_dict['Jacobi errors'])
     batch_size, length = errors.shape
     for i in range(batch_size):
-      if np.all(fd_errors[i] >= self.error_threshold):
+      if np.any(fd_errors[i] < self.error_threshold) and \
+         np.any(errors[i] < self.error_threshold):
+        model_step = np.nonzero(errors[i] < self.error_threshold)[0][0]
+        fd_step = np.nonzero(fd_errors[i] < self.error_threshold)[0][0]
+        model_step *= self.scale # scaling for model
+        self.model_steps.append(model_step)
+        self.fd_steps.append(fd_step)
+      else:
         self.invalid += 1
-        continue
-      model_step = np.nonzero(errors[i] < self.error_threshold)[0][0]
-      fd_step = np.nonzero(fd_errors[i] < self.error_threshold)[0][0]
-      model_step *= self.scale # scaling for model
-      self.model_steps.append(model_step)
-      self.fd_steps.append(fd_step)
 
   def get_results(self):
     print('Invalid: {}/{}'.format(self.invalid, len(self.fd_steps) + self.invalid))

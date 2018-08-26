@@ -36,12 +36,13 @@ def main():
     if opt.evaluate_every > 0 and (epoch + 1) % opt.evaluate_every == 0:
       model.setup(is_train=False)
       # Find eigenvalues
-      w, _ = utils.calculate_eigenvalues(model, image_size=15)
-      w = sorted(np.abs(w))
-      eigenvalues = {'first': w[-2], 'second': w[-3], 'third': w[-4]}
-      vis.add_scalar({'eigenvalues': eigenvalues}, epoch)
-      logger.print('Eigenvalues: {:.2f}, {:.3f}, {:.3f}, {:.3f}'\
-                    .format(w[-1], w[-2], w[-3], w[-4]))
+      if opt.iterator != 'cg':
+        w, _ = utils.calculate_eigenvalues(model, image_size=15)
+        w = sorted(np.abs(w))
+        eigenvalues = {'first': w[-2], 'second': w[-3], 'third': w[-4]}
+        vis.add_scalar({'eigenvalues': eigenvalues}, epoch)
+        logger.print('Eigenvalues: {:.2f}, {:.3f}, {:.3f}, {:.3f}'\
+                      .format(w[-1], w[-2], w[-3], w[-4]))
 
       # Evaluate entire val set
       results, error_curves = evaluate(opt, model, val_loader, logger)
