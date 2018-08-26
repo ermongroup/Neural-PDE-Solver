@@ -60,3 +60,22 @@ def plot(data_list, config):
     img = img.resize(config['image_size'])
   img = np.array(img) # H x W x 3
   return img
+
+def gaussian(image_size):
+  '''
+  Return a Gaussian with random size and location.
+  Maximum value is 1.
+  '''
+  width = image_size // 2
+  # Random location
+  x_mean = np.random.randint(-width // 2, width // 2 + 1)
+  y_mean = np.random.randint(-width // 2, width // 2 + 1)
+  x = np.linspace(-width, width, num=image_size, endpoint=True) + x_mean
+  y = np.linspace(-width, width, num=image_size, endpoint=True) + y_mean
+  # Random size
+  s = np.random.uniform(2, 3)
+  sd = width / s
+  x = np.exp(-(x ** 2) / 2 / (sd ** 2))
+  y = np.exp(-(y ** 2) / 2 / (sd ** 2))
+  kernel = x[:, np.newaxis] * y[np.newaxis, :]
+  return kernel

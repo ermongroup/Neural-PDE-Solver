@@ -47,13 +47,13 @@ def test_heat():
     z = utils.fd_step(z, bc) - f
 
   # Au = 0
-  A = utils.loss_kernel.view(1, 1, 3, 3) * (-0.25)
+  A = utils.loss_kernel.view(1, 1, 3, 3)
   r = F.conv2d(y.unsqueeze(1), A).squeeze(1)
   error = torch.abs(r).max().item()
   print(error)
 
   # Au = f
-  A = utils.loss_kernel.view(1, 1, 3, 3) * (-0.25)
+  A = utils.loss_kernel.view(1, 1, 3, 3)
   r = F.conv2d(z.unsqueeze(1), A).squeeze(1) - f[:, 1:-1, 1:-1]
   error = torch.abs(r).max().item()
   print(error)
