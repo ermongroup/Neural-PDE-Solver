@@ -11,7 +11,11 @@ def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
   '''
   Loop through the dataset and calculate evaluation metrics.
   '''
-  metric = utils.Metrics(scale=model.n_operations, error_threshold=error_threshold)
+  logger.print('Comparison: {} ({}), {} ({})'.format(\
+                   model.iterator.name(), model.iterator.n_operations,
+                   model.compare_model.name(), model.compare_model.n_operations))
+
+  metric = utils.Metrics(scale=model.operations_ratio, error_threshold=error_threshold)
   images = []
 
   for step, data in enumerate(data_loader):

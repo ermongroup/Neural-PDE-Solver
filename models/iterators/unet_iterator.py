@@ -9,6 +9,7 @@ class UNetIterator(Iterator):
   def __init__(self, act, n_layers, pre_smoothing, post_smoothing):
     super(UNetIterator, self).__init__(act)
     self.n_layers = n_layers
+    self.n_operations = (pre_smoothing + post_smoothing + 2) * 4 / 3
 
     # Downsampling, first half of U-Net
     downsampling_layers = []
@@ -66,3 +67,6 @@ class UNetIterator(Iterator):
     # Set boundary
     y = utils.pad_boundary(y.squeeze(1), bc).unsqueeze(1) # same size as x
     return y
+
+  def name(self):
+    return 'UNet{}'.format(self.n_layers)

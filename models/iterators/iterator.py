@@ -7,6 +7,7 @@ class Iterator(nn.Module):
   def __init__(self, act=None):
     super(Iterator, self).__init__()
     self.act = act
+    self.n_operations = None
     # Finite difference kernels
     self.fd_update_kernel = utils.update_kernel.view(1, 1, 3, 3).cuda()
     self.fd_loss_kernel = utils.loss_kernel.view(1, 1, 3, 3).cuda()
@@ -37,11 +38,14 @@ class Iterator(nn.Module):
     '''
     raise NotImplementedError
 
+  def name(self):
+    raise NotImplementedError
 
 class BasicIterator(Iterator):
   def __init__(self, act):
     super(BasicIterator, self).__init__(act)
 
+    self.n_operations = 1
     self.layers = nn.Sequential(
                       nn.Conv2d(1, 1, 3, bias=False))
     # Initialize
@@ -56,3 +60,6 @@ class BasicIterator(Iterator):
     y = utils.pad_boundary(y, bc)
     y = y.unsqueeze(1) # batch_size x 1 x image_size x image_size
     return y
+
+  def name(self):
+    return 'Basic'

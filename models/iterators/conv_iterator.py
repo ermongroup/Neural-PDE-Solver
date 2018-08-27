@@ -15,6 +15,7 @@ class ConvIterator(Iterator):
                  nn.Conv2d(1, 1, 3, stride=1, padding=0, bias=False)]
     self.layers = nn.Sequential(*layers)
     self.n_layers = n_layers
+    self.n_operations = 1 + n_layers
 
   def forward(self, x, bc):
     '''
@@ -31,3 +32,6 @@ class ConvIterator(Iterator):
     # Set boundary
     y = utils.pad_boundary(y.squeeze(1), bc).unsqueeze(1) # same size as x
     return y
+
+  def name(self):
+    return 'Conv{}'.format(self.n_layers)

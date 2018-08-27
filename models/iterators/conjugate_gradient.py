@@ -9,6 +9,7 @@ class ConjugateGradient(Iterator):
   def __init__(self, n_iters):
     super(ConjugateGradient, self).__init__()
     self.n_iters = n_iters
+    self.n_operations = n_iters
 
   def forward(self, x, bc):
     '''
@@ -40,3 +41,6 @@ class ConjugateGradient(Iterator):
       rTr = rTr_new
 
     return x
+
+  def name(self):
+    return 'Conjugate Gradient'

@@ -7,6 +7,7 @@ import utils
 class JacobiIterator(Iterator):
   def __init__(self):
     super(JacobiIterator, self).__init__()
+    self.n_operations = 1
 
   def forward(self, x, bc):
     '''
@@ -14,6 +15,9 @@ class JacobiIterator(Iterator):
     return: same size
     '''
     return utils.fd_step(x.squeeze(1), bc).unsqueeze(1)
+
+  def name(self):
+    return 'Jacobi'
 
 class MultigridIterator(Iterator):
   '''
@@ -24,6 +28,7 @@ class MultigridIterator(Iterator):
     self.n_layers = n_layers
     self.pre_smoothing = pre_smoothing
     self.post_smoothing = post_smoothing
+    self.n_operations = (pre_smoothing + post_smoothing + 2) * 4 / 3
 
   def multigrid_step(self, x, bc, step):
     '''
@@ -56,6 +61,9 @@ class MultigridIterator(Iterator):
     y = self.multigrid_step(x, bc, self.n_layers)
     return y.unsqueeze(1)
 
+  def name(self):
+    return 'Multigrid'
+
 
 class MultigridResidualIterator(Iterator):
   '''
@@ -67,6 +75,7 @@ class MultigridResidualIterator(Iterator):
     self.n_layers = n_layers
     self.pre_smoothing = pre_smoothing
     self.post_smoothing = post_smoothing
+    self.n_operations = (pre_smoothing + post_smoothing + 2) * 4 / 3
 
   def multigrid_step(self, x, bc, f, step):
     '''
@@ -120,3 +129,6 @@ class MultigridResidualIterator(Iterator):
     f = torch.zeros_like(x).cuda()
     y = self.multigrid_step(x, bc, f, self.n_layers)
     return y.unsqueeze(1)
+
+  def name(self):
+    return 'Multigrid residual'

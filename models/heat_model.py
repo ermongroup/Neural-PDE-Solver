@@ -15,40 +15,39 @@ class HeatModel(BaseModel):
     # Iterator
     if opt.iterator == 'jacobi':
       self.iterator = JacobiIterator().cuda()
-      self.n_operations = 1
       self.is_train = False
     elif opt.iterator == 'multigrid':
       self.iterator = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,
                                         opt.mg_post_smoothing).cuda()
-      self.n_operations = (opt.mg_pre_smoothing + opt.mg_post_smoothing + 2) * (4 / 3)
       self.is_train = False
     elif opt.iterator == 'cg':
       self.iterator = ConjugateGradient(opt.cg_n_iters)
-      self.n_operations = opt.cg_n_iters
       self.is_train = False
     elif opt.iterator == 'basic':
       self.iterator = BasicIterator(opt.activation).cuda()
-      self.n_operations = 1
     elif opt.iterator == 'conv':
       self.iterator = ConvIterator(opt.activation, opt.conv_n_layers).cuda()
-      self.n_operations = 1 + opt.conv_n_layers
     elif opt.iterator == 'unet':
       self.iterator = UNetIterator(opt.activation, opt.mg_n_layers,
                                    opt.mg_pre_smoothing, opt.mg_post_smoothing).cuda()
-      self.n_operations = 1 # Compare to multigrid
     else:
       raise NotImplementedError
     self.nets['iterator'] = self.iterator
 
     # Compare to Jacobi methods
     if opt.iterator == 'conv' or opt.iterator == 'basic' or \
-       opt.iterator == 'multigrid' or opt.iterator == 'cg':
+       opt.iterator == 'multigrid':
       self.compare_model = JacobiIterator()
-    elif opt.iterator == 'unet':
+    elif opt.iterator == 'unet' or opt.iterator == 'cg':
       self.compare_model = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,
                                              opt.mg_post_smoothing)
     else:
       self.compare_model = None
+    # ratio of operations
+    if self.compare_model is not None:
+      self.operations_ratio = self.iterator.n_operations / self.compare_model.n_operations
+    else:
+      self.operations_ratio = 1
 
     if self.is_train:
       self.criterion_mse = nn.MSELoss().cuda()

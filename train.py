@@ -18,7 +18,6 @@ def main():
   val_loader = get_data_loader(val_opt)
 
   model = HeatModel(opt)
-  metric = utils.Metrics(scale=model.n_operations, error_threshold=0.05)
 
   for epoch in range(opt.start_epoch, opt.n_epochs):
     model.setup(is_train=True)
