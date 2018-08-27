@@ -20,14 +20,14 @@ def build(is_train, tb_dir=None):
   np.random.seed(666)
   random.seed(666)
 
-  logger = Logger(opt.ckpt_path, opt.split)
-  stats = Statistics(opt.ckpt_path)
-
   if tb_dir is not None:
     tb_path = os.path.join(opt.ckpt_path, tb_dir)
     vis = Visualizer(tb_path)
   else:
     vis = None
+
+  logger = Logger(opt.ckpt_path, opt.split)
+  stats = Statistics(opt.ckpt_path)
 
   logger.print(log)
 
