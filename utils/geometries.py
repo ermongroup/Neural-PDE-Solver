@@ -14,8 +14,8 @@ def cylinders(image_size):
   x = cv2.circle(x, (c, c), r1, 255, -1) / 255
   outer = 1 - x
   # Outer shell
-  y = cv2.circle(np.zeros_like(x), (c, c), r1 + 3, 255, -1) / 255
-  outer_shell = y - x
+#  y = cv2.circle(np.zeros_like(x), (c, c), r1 + 3, 255, -1) / 255
+#  outer_shell = y - x
 
   # Inner cylinder
   center = np.random.randint(-r2 * 1, r2 * 1 + 1, size=2) + c
@@ -29,9 +29,9 @@ def cylinders(image_size):
   half = (image_size + 1) // 2
   v1 = np.random.uniform(0.1, 0.3)
   v2 = np.random.uniform(0.4, 0.6)
-  outer_shell[:half, :] = outer_shell[:half, :] * v1
-  outer_shell[half:, :] = outer_shell[half:, :] * v2
-  bc = outer_shell + inner * 1.0
+  outer[:half, :] = outer[:half, :] * v1
+  outer[half:, :] = outer[half:, :] * v2
+  bc = outer + inner * 1.0
 
   # Initialize
   x = np.zeros_like(x)
