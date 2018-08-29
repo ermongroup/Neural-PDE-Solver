@@ -82,22 +82,22 @@ def fd_step(x, bc, f):
   y = set_boundary(y, bc)
   return y
 
-def fd_error(x, f, bc=None, aggregate='max'):
+def fd_error(x, bc, f, aggregate='max'):
   '''
   Use loss kernel to calculate absolute error.
   l = Au - f.
   '''
-  if bc is None:
-    # Original bc
-    l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3)).squeeze(1)
-    if f is not None:
-      l = l - f[:, 1:-1, 1:-1]
-  else:
+  if isinstance(bc, dict):
     # bc mask
     l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3), padding=1).squeeze(1)
     if f is not None:
       l = l - f
     l = l * (1 - bc['bc_mask'])
+  else:
+    # Original bc
+    l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3)).squeeze(1)
+    if f is not None:
+      l = l - f[:, 1:-1, 1:-1]
 
   l = l.view(l.size(0), -1)
   if aggregate == 'max':

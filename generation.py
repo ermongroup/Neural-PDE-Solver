@@ -25,6 +25,29 @@ parser.add_argument('--geometry', type=str, default='square',
 np.random.seed(666)
 
 
+def get_solution(x, bc, f):
+  '''
+  Iterate until error is below a threshold.
+  '''
+  frames = [x]
+
+  error_threshold = 0.001
+  max_iters = 20000
+  # Iterate with Jacobi until ground truth
+  for i in range(max_iters):
+    x = utils.fd_step(x, bc, f)
+    error = utils.fd_error(x, bc, f)
+    if (i + 1) % 100 == 0:
+      largest_error = error.max().item() # largest error in the batch
+      print('Iter {}: largest error {}'.format(i + 1, largest_error))
+      if largest_error < error_threshold:
+        break
+  # Add ground truth to frames
+  y = x.cpu().numpy()
+  frames.append(y)
+  frames = np.stack(frames, axis=1) # batch_size x (n_frames + 1) x image_size x image_size
+  return frames
+
 def get_heat_source(image_size, batch_size):
   heat_src = []
   for i in range(batch_size):
@@ -54,7 +77,6 @@ def generate_square(opt):
     x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size) * opt.max_temp
     bc = boundary_conditions[run]
     x = utils.set_boundary(x, bc)
-    frames = [x]
     if opt.heat_source:
       f = get_heat_source(opt.image_size - 2, opt.batch_size)
     else:
@@ -71,32 +93,19 @@ def generate_square(opt):
 
     # Use Multigrid model to initialize
     # TODO: Multigrid does not support Au = f yet.
-#    model = MultigridIterator(4, 4, 4)
-#    for i in range(50):
-#      x = model.iter_step(x, bc)
-#    error = utils.fd_error(x)
-#    largest_error = error.max().item()
-#    print('largest error {}'.format(largest_error))
+    if f is None:
+      model = MultigridIterator(4, 4, 4)
+      for i in range(50):
+        x = model.iter_step(x, bc)
+      error = utils.fd_error(x)
+      largest_error = error.max().item()
+      print('largest error {}'.format(largest_error))
 
-    error_threshold = 0.001
-    max_iters = 20000
-    # Iterate with Jacobi until ground truth
-    for i in range(max_iters):
-      x = utils.fd_step(x, bc, f)
-      error = utils.fd_error(x, f)
-      if (i + 1) % 100 == 0:
-        largest_error = error.max().item() # largest error in the batch
-        print('Iter {}: largest error {}'.format(opt.n_frames * opt.save_every + i + 1, largest_error))
-        if largest_error < error_threshold:
-          break
-    # Add ground truth to frames
-    y = x.cpu().numpy()
-    frames.append(y)
-    assert len(frames) == opt.n_frames + 1
-    frames = np.stack(frames, axis=1) # batch_size x (n_frames + 1) x image_size x image_size
+    # Find solution
+    frames = get_solution(x, bc, f)
+    assert frames.shape[1] == opt.n_frames + 1
     np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), frames)
     print('Run {} saved.'.format(run))
-
 
 def generate_geometry(opt):
   '''
@@ -121,24 +130,10 @@ def generate_geometry(opt):
       bc_values = bc_values.cuda()
       bc_mask = bc_mask.cuda()
     bc = {'bc_values': bc_values, 'bc_mask': bc_mask}
-    frames = [x]
 
-    error_threshold = 0.001
-    max_iters = 20000
-    # Iterate with Jacobi until ground truth
-    for i in range(max_iters):
-      x = utils.fd_step(x, bc, f)
-      error = utils.fd_error(x, f, bc)
-      if (i + 1) % 100 == 0:
-        largest_error = error.max().item() # largest error in the batch
-        print('Iter {}: largest error {}'.format(opt.n_frames * opt.save_every + i + 1, largest_error))
-        if largest_error < error_threshold:
-          break
-    # Add ground truth to frames
-    y = x.cpu().numpy()
-    frames.append(y)
-    assert len(frames) == opt.n_frames + 1
-    frames = np.stack(frames, axis=1) # batch_size x (n_frames + 1) x image_size x image_size
+    # Find solution
+    frames = get_solution(x, bc, f)
+    assert frames.shape[1] == opt.n_frames + 1
     np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), frames)
     print('Run {} saved.'.format(run))
 
