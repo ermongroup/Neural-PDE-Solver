@@ -24,42 +24,19 @@ class Iterator(nn.Module):
       raise NotImplementedError
     return x
 
-  def iter_step(self, x, bc):
+  def iter_step(self, x, bc, f):
     '''
     One step of iteration.
-    x: (batch_size, image_size, image_size)
+    x, f: (batch_size, image_size, image_size)
     '''
-    return self.forward(x.unsqueeze(1), bc).squeeze(1)
+    return self.forward(x, bc, f)
 
-  def forward(self, x, bc):
+  def forward(self, x, bc, f):
     '''
-    x: size (batch_size x 1 x image_size x image_size)
+    x: size (batch_size x image_size x image_size)
     return: same size
     '''
     raise NotImplementedError
 
   def name(self):
     raise NotImplementedError
-
-class BasicIterator(Iterator):
-  def __init__(self, act):
-    super(BasicIterator, self).__init__(act)
-
-    self.n_operations = 1
-    self.layers = nn.Sequential(
-                      nn.Conv2d(1, 1, 3, bias=False))
-    # Initialize
-    initial_weight = utils.update_kernel.view(1, 1, 3, 3)
-    self.layers[0].weight = nn.Parameter(initial_weight)
-
-  def forward(self, x, bc):
-    y = self.layers(x)
-    y = self.activation(y)
-    # y.size(): batch_size x 1 x (image_size - 2) x (image_size - 2)
-    y = y.squeeze(1)
-    y = utils.pad_boundary(y, bc)
-    y = y.unsqueeze(1) # batch_size x 1 x image_size x image_size
-    return y
-
-  def name(self):
-    return 'Basic'

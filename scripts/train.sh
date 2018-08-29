@@ -6,16 +6,14 @@ python train.py \
   --save_every 1 \
   --n_epochs 20 \
   --lr_init 1e-3 \
-  --lambda_gt 0 \
-  --image_size 15 \
   --max_iter_steps 20 \
   --max_iter_steps_from_gt 0 \
   --n_evaluation_steps 400 \
-  --activation clamp \
+  --image_size 63 \
   --iterator multigrid \
-  --conv_n_layers 3 \
-  --mg_n_layers 3 \
-  --mg_pre_smoothing 4 \
-  --mg_post_smoothing 4 \
+  --conv_n_layers 1 \
+  --mg_n_layers 4 \
+  --mg_pre_smoothing 2 \
+  --mg_post_smoothing 2 \
   --initialization random \
-  --ckpt_name ''
+  --ckpt_name test

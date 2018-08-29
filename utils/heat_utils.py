@@ -64,7 +64,7 @@ def initialize(x, bc, initialization):
     raise NotImplementedError
   return x
 
-def fd_step(x, bc, f=0):
+def fd_step(x, bc, f):
   '''
   One update of Jacobi iterative method.
   x: torch tensor of size (batch_size x H x W)
@@ -74,7 +74,9 @@ def fd_step(x, bc, f=0):
   y = F.conv2d(x.unsqueeze(1), update_kernel.view(1, 1, 3, 3))
   # Add boundaries back
   y = F.pad(y, (1, 1, 1, 1)).view_as(x)
-  y = set_boundary(y, bc) - f
+  y = set_boundary(y, bc)
+  if f is not None:
+    y = y - f
   return y
 
 def fd_error(x, f, aggregate='max'):
@@ -120,7 +122,7 @@ def fd_iter(x, bc, error_threshold, max_iters=100000):
       break
   return x
 
-def calculate_errors(x, bc, gt, iter_func, n_steps, starting_error):
+def calculate_errors(x, bc, f, gt, iter_func, n_steps, starting_error):
   '''
   Run iterations and calculate errors, relative to starting_error.
   '''
@@ -128,7 +130,7 @@ def calculate_errors(x, bc, gt, iter_func, n_steps, starting_error):
   errors = [torch.ones(batch_size, 1)]
   x = x.detach()
   for i in range(n_steps):
-    x = iter_func(x, bc).detach()
+    x = iter_func(x, bc, f).detach()
     e = l2_error(x, gt).cpu() / starting_error # Normalize by starting_error
     if (e < 0.002).all().item():
       # Pad with zeros when error is close to 0
@@ -166,7 +168,7 @@ def construct_matrix(bc, image_size, iter_func):
   Construct the update matrix given the iterator function.
   x' = Ax + b
   y' = By, where y = [- x -, 1]
-  iter_func: function, iter_func(x, b).
+  iter_func: function, iter_func(x, b, f).
              x must be (1 x image_size x image_size).
   Return matrix A and B (torch Tensors).
   '''
@@ -178,7 +180,7 @@ def construct_matrix(bc, image_size, iter_func):
     x = x.cuda()
     bc = bc.cuda()
   x = set_boundary(x, bc)
-  y = iter_func(x, bc).detach()
+  y = iter_func(x, bc, None).detach()
   bias = y[0, 1:-1, 1:-1].cpu().view(-1)
   # columns
   columns = []
@@ -186,7 +188,7 @@ def construct_matrix(bc, image_size, iter_func):
     for j in range(image_size):
       y = x.clone()
       y[0, i + 1, j + 1] = 1
-      y = iter_func(y, bc).detach()
+      y = iter_func(y, bc, None).detach()
       c = y[0, 1:-1, 1:-1].cpu().view(-1) - bias
       columns.append(c)
   A = torch.stack(columns, dim=1)
@@ -225,6 +227,16 @@ def restriction(x, bc):
   x = x[:, 1:-1, 1:-1].unsqueeze(1)
   y = F.conv2d(x, restriction_kernel.view(1, 1, 3, 3), stride=2).squeeze(1)
   y = pad_boundary(y, bc)
+  return y
+
+def subsample(x):
+  '''
+  Bilinear subsampling.
+  Return: downsampled x of size (N - 1) / 2 + 1. Ex. 33 -> 17
+  '''
+  _, image_size, _ = x.size()
+  new_size = (image_size - 1) // 2 + 1
+  y = F.interpolate(x.unsqueeze(1), size=new_size, mode='bilinear', align_corners=True)
   return y
 
 def interpolation(x, bc):

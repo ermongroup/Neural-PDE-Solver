@@ -11,19 +11,21 @@ def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
   '''
   Loop through the dataset and calculate evaluation metrics.
   '''
-  logger.print('Comparison: {} ({}), {} ({})'.format(\
-                   model.iterator.name(), model.iterator.n_operations,
-                   model.compare_model.name(), model.compare_model.n_operations))
+  if model.compare_model is not None:
+    logger.print('Comparison: {} ({}), {} ({})'.format(\
+                     model.iterator.name(), model.iterator.n_operations,
+                     model.compare_model.name(), model.compare_model.n_operations))
 
   metric = utils.Metrics(scale=model.operations_ratio, error_threshold=error_threshold)
   images = []
 
   for step, data in enumerate(data_loader):
     bc, final, x = data['bc'], data['final'], data['x']
+    f = None if 'f' not in data else data['f']
     if opt.initialization != 'random':
       # Test time: do not change data if 'random'
       x = utils.initialize(x, bc, opt.initialization)
-    error_dict = model.evaluate(x, final, bc, opt.n_evaluation_steps)
+    error_dict = model.evaluate(x, final, bc, f, opt.n_evaluation_steps)
     # Update metric
     metric.update(error_dict)
 
@@ -58,15 +60,16 @@ def check_eigenvalues(opt, model, logger, vis):
   w = sorted(np.abs(w))
 
   # Finite difference
-  A, B = utils.construct_matrix(np.zeros((1, 4)), image_size, model.compare_model.iter_step)
-  w_fd, v_fd = np.linalg.eig(B)
-  w_fd = sorted(np.abs(w_fd))
-  print('Finite difference eigenvalues:\n{}\n'.format(w_fd))
-  if vis is not None:
-    img = utils.plot([{'y': w_fd, 'label': 'Jacobi eigenvalues'},
-                      {'y': w, 'label': 'model eigenvalues'}],
-                     config={'title': 'Eigenvalues'})
-    vis.add_image({'eigenvalues': img})
+  if model.compare_model is not None:
+    A, B = utils.construct_matrix(np.zeros((1, 4)), image_size, model.compare_model.iter_step)
+    w_fd, v_fd = np.linalg.eig(B)
+    w_fd = sorted(np.abs(w_fd))
+    print('Finite difference eigenvalues:\n{}\n'.format(w_fd))
+    if vis is not None:
+      img = utils.plot([{'y': w_fd, 'label': 'Jacobi eigenvalues'},
+                        {'y': w, 'label': 'model eigenvalues'}],
+                       config={'title': 'Eigenvalues'})
+      vis.add_image({'eigenvalues': img})
 
 def test(opt, model, data_loader, logger, vis=None):
   '''

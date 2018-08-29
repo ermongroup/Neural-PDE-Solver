@@ -23,8 +23,9 @@ def main():
     model.setup(is_train=True)
     for step, data in enumerate(data_loader):
       bc, final, x = data['bc'], data['final'], data['x']
+      f = None if 'f' not in data else data['f']
       x = utils.initialize(x, bc, opt.initialization)
-      loss_dict = model.train(x, final, bc)
+      loss_dict = model.train(x, final, bc, f)
       if (step + 1) % opt.log_every == 0:
         print('Epoch {}, step {}'.format(epoch, step))
         vis.add_scalar(loss_dict, epoch * len(data_loader) + step)

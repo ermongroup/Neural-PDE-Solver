@@ -13,7 +13,11 @@ class Metrics(object):
 
   def update(self, error_dict):
     errors = to_numpy(error_dict['model errors'])
-    fd_errors = to_numpy(error_dict['Jacobi errors'])
+    if 'Jacobi errors' not in error_dict:
+      # No comparision
+      fd_errors = errors
+    else:
+      fd_errors = to_numpy(error_dict['Jacobi errors'])
     batch_size, length = errors.shape
     for i in range(batch_size):
       if np.any(fd_errors[i] < self.error_threshold) and \

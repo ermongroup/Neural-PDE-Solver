@@ -23,8 +23,6 @@ class HeatModel(BaseModel):
     elif opt.iterator == 'cg':
       self.iterator = ConjugateGradient(opt.cg_n_iters)
       self.is_train = False
-    elif opt.iterator == 'basic':
-      self.iterator = BasicIterator(opt.activation).cuda()
     elif opt.iterator == 'conv':
       self.iterator = ConvIterator(opt.activation, opt.conv_n_layers).cuda()
     elif opt.iterator == 'unet':
@@ -35,8 +33,7 @@ class HeatModel(BaseModel):
     self.nets['iterator'] = self.iterator
 
     # Compare to Jacobi methods
-    if opt.iterator == 'conv' or opt.iterator == 'basic' or \
-       opt.iterator == 'multigrid':
+    if opt.iterator == 'conv' or opt.iterator == 'multigrid':
       self.compare_model = JacobiIterator()
     elif opt.iterator == 'unet' or opt.iterator == 'cg':
       self.compare_model = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,
@@ -62,7 +59,7 @@ class HeatModel(BaseModel):
       self.max_iter_steps_from_gt = opt.max_iter_steps_from_gt
       self.lambdas = {'gt': opt.lambda_gt}
 
-  def train(self, x, gt, bc):
+  def train(self, x, gt, bc, f):
     '''
     x, gt: size (batch_size x image_size x image_size)
     '''
@@ -72,6 +69,8 @@ class HeatModel(BaseModel):
     x = x.cuda()
     gt = gt.cuda()
     bc = bc.cuda()
+    if f is not None:
+      f = f.cuda()
     loss_dict = {}
 
     if self.lambdas['gt'] < 1:
@@ -79,9 +78,9 @@ class HeatModel(BaseModel):
       # N-1 iterations from x
       y = x.detach()
       for i in range(N - 1):
-        y = self.iter_step(y, bc).detach()
+        y = self.iter_step(y, bc, f).detach()
       # One more iteration (no detach)
-      y = self.iter_step(y, bc)
+      y = self.iter_step(y, bc, f)
       loss_x = self.criterion_mse(y, gt)
       loss_dict['loss_x'] = loss_x.item()
     else:
@@ -91,9 +90,9 @@ class HeatModel(BaseModel):
       M = np.random.randint(1, self.max_iter_steps_from_gt + 1)
       y_gt = gt.detach()
       for i in range(M - 1):
-        y_gt = self.iter_step(y_gt, bc).detach()
+        y_gt = self.iter_step(y_gt, bc, f).detach()
       # One more iteration
-      y_gt = self.iter_step(y_gt, bc)
+      y_gt = self.iter_step(y_gt, bc, f)
       loss_gt = self.criterion_mse(y_gt, gt)
       loss_dict['loss_gt'] = loss_gt.item()
     else:
@@ -106,9 +105,9 @@ class HeatModel(BaseModel):
 
     return {'loss': loss_dict}
 
-  def iter_step(self, x, bc):
+  def iter_step(self, x, bc, f):
     ''' Perform one iteration step. '''
-    return self.iterator.iter_step(x, bc)
+    return self.iterator.iter_step(x, bc, f)
 
   def get_activation(self):
     return self.iterator.act
@@ -117,26 +116,28 @@ class HeatModel(BaseModel):
     ''' Change activation function, used to calculate eigenvalues '''
     self.iterator.act = act
 
-  def evaluate(self, x, gt, bc, n_steps):
+  def evaluate(self, x, gt, bc, f, n_steps):
     '''
-    x, gt: size (batch_size x image_size x image_size)
+    x, f, gt: size (batch_size x image_size x image_size)
     Run Jacobi and our iterator for n_steps iterations, and calculate errors.
     Return a dictionary of errors: size (batch_size x (n_steps + 1)).
     '''
     bc = bc.cuda()
     x = x.cuda()
     gt = gt.cuda()
+    if f is not None:
+      f = f.cuda()
     starting_error = utils.l2_error(x, gt).cpu()
     results = {}
 
     if self.compare_model is not None:
       # Jacobi
-      fd_errors, _ = utils.calculate_errors(x, bc, gt, self.compare_model.iter_step,
+      fd_errors, _ = utils.calculate_errors(x, bc, f, gt, self.compare_model.iter_step,
                                             n_steps, starting_error)
       results['Jacobi errors'] = fd_errors
 
     # error of model
-    errors, _ = utils.calculate_errors(x, bc, gt, self.iter_step, n_steps, starting_error)
+    errors, _ = utils.calculate_errors(x, bc, f, gt, self.iter_step, n_steps, starting_error)
     results['model errors'] = errors
 
     return results

@@ -9,15 +9,16 @@ class JacobiIterator(Iterator):
     super(JacobiIterator, self).__init__()
     self.n_operations = 1
 
-  def forward(self, x, bc):
+  def forward(self, x, bc, f):
     '''
-    x: size (batch_size x 1 x image_size x image_size)
+    x: size (batch_size x image_size x image_size)
     return: same size
     '''
-    return utils.fd_step(x.squeeze(1), bc).unsqueeze(1)
+    return utils.fd_step(x, bc, f)
 
   def name(self):
     return 'Jacobi'
+
 
 class MultigridIterator(Iterator):
   '''
@@ -30,36 +31,39 @@ class MultigridIterator(Iterator):
     self.post_smoothing = post_smoothing
     self.n_operations = (pre_smoothing + post_smoothing + 2) * 4 / 3
 
-  def multigrid_step(self, x, bc, step):
+  def multigrid_step(self, x, bc, f, step):
     '''
     One layer of multigrid. Recursive function.
     Find solution x to Ax + b = 0.
     '''
     # Pre smoothing
     for i in range(self.pre_smoothing):
-      x = utils.fd_step(x, bc)
+      x = utils.fd_step(x, bc, f)
 
     if step > 1:
       # Downsample
       x_sub = utils.restriction(x, bc)
+      if f is not None:
+        f_sub = utils.subsample(f)
+      else:
+        f_sub = None
       # Refine x_sub recursively
-      x_sub = self.multigrid_step(x_sub, bc, step - 1)
+      x_sub = self.multigrid_step(x_sub, bc, f_sub, step - 1)
       # Upsample
       x = utils.interpolation(x_sub, bc)
 
     # Post smoothing
     for i in range(self.post_smoothing):
-      x = utils.fd_step(x, bc)
+      x = utils.fd_step(x, bc, f)
     return x
 
-  def forward(self, x, bc):
+  def forward(self, x, bc, f):
     '''
-    x: size (batch_size x 1 x image_size x image_size)
+    x, f: size (batch_size x image_size x image_size)
     return: same size
     '''
-    x = x.squeeze(1)
-    y = self.multigrid_step(x, bc, self.n_layers)
-    return y.unsqueeze(1)
+    y = self.multigrid_step(x, bc, f, self.n_layers)
+    return y
 
   def name(self):
     return 'Multigrid'
@@ -93,10 +97,9 @@ class MultigridResidualIterator(Iterator):
     # Pre smoothing
     x = utils.set_boundary(x, bc)
     for i in range(self.pre_smoothing):
-      x = utils.fd_step(x, bc)
-      x = x - f
+      x = utils.fd_step(x, bc, f)
     # Calculate residual
-    y = utils.fd_step(x, bc)
+    y = utils.fd_step(x, bc, f)
     r = y - x
 
     # Solve e: A e = -r
@@ -116,19 +119,16 @@ class MultigridResidualIterator(Iterator):
     # Post smoothing
     x = utils.set_boundary(x, bc)
     for i in range(self.post_smoothing):
-      x = utils.fd_step(x, bc)
-      x = x - f
+      x = utils.fd_step(x, bc, f)
     return x
 
-  def forward(self, x, bc):
+  def forward(self, x, bc, f):
     '''
-    x: size (batch_size x 1 x image_size x image_size)
+    x: size (batch_size x image_size x image_size)
     return: same size
     '''
-    x = x.squeeze(1)
-    f = torch.zeros_like(x).cuda()
     y = self.multigrid_step(x, bc, f, self.n_layers)
-    return y.unsqueeze(1)
+    return y
 
   def name(self):
     return 'Multigrid residual'
