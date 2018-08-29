@@ -11,14 +11,17 @@ class ConjugateGradient(Iterator):
     self.n_iters = n_iters
     self.n_operations = n_iters
 
-  def forward(self, x, bc):
+  def forward(self, x, bc, f):
     '''
-    x: size (batch_size x 1 x image_size x image_size)
+    x: size (batch_size x image_size x image_size)
     return: same size
     '''
     batch_size = x.size(0)
+    x = x.unsqueeze(1)
 
     r = - F.conv2d(x, self.fd_loss_kernel)
+    if f is not None:
+      r = f + r
     p = r.clone()
     rTr = utils.dot_product(r, r)
 
@@ -40,7 +43,7 @@ class ConjugateGradient(Iterator):
       r = r_new
       rTr = rTr_new
 
-    return x
+    return x.squeeze(1)
 
   def name(self):
     return 'Conjugate Gradient'

@@ -34,12 +34,15 @@ class UNetIterator(Iterator):
       upsampling_layers.append(layers)
     self.upsampling_layers = nn.ModuleList(upsampling_layers)
 
-  def forward(self, x, bc):
+  def forward(self, x, bc, f):
     '''
-    x: size (batch_size x 1 x image_size x image_size)
+    x: size (batch_size x image_size x image_size)
     return: same size
     '''
+    x = x.unsqueeze(1)
     y = F.conv2d(x, self.fd_update_kernel)
+    if f is not None:
+      y = y - f[..., 1:-1, 1:-1]
     z = x[:, :, 1:-1, 1:-1] - y
 
     # downsampling
@@ -65,7 +68,7 @@ class UNetIterator(Iterator):
     y = y + z
     y = self.activation(y)
     # Set boundary
-    y = utils.pad_boundary(y.squeeze(1), bc).unsqueeze(1) # same size as x
+    y = utils.pad_boundary(y.squeeze(1), bc)
     return y
 
   def name(self):

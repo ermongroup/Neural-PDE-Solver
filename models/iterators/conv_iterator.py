@@ -17,12 +17,15 @@ class ConvIterator(Iterator):
     self.n_layers = n_layers
     self.n_operations = 1 + n_layers
 
-  def forward(self, x, bc):
+  def forward(self, x, bc, f):
     '''
-    x: size (batch_size x 1 x image_size x image_size)
+    x: size (batch_size x image_size x image_size)
     return: same size
     '''
+    x = x.unsqueeze(1)
     z = F.conv2d(x, self.fd_update_kernel)
+    if f is not None:
+      z = z - f[..., 1:-1, 1:-1]
     y = x[:, :, 1:-1, 1:-1] - z
 
     y = self.layers(y)
@@ -30,7 +33,7 @@ class ConvIterator(Iterator):
 
     y = self.activation(y)
     # Set boundary
-    y = utils.pad_boundary(y.squeeze(1), bc).unsqueeze(1) # same size as x
+    y = utils.pad_boundary(y.squeeze(1), bc)
     return y
 
   def name(self):
