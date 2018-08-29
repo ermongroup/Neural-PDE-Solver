@@ -31,10 +31,16 @@ def set_boundary(x, bc):
   x: batch_size x H x W
   bc: batch_size x 4
   '''
-  x[:, 0, :] = bc[:, 0:1]
-  x[:, -1, :] = bc[:, 1:2]
-  x[:, :, 0] = bc[:, 2:3]
-  x[:, :, -1] = bc[:, 3:4]
+  if isinstance(bc, dict):
+    # bc and bc_mask
+    bc_values = bc['bc_values']
+    bc_mask = bc['bc_mask']
+    x = x * (1 - bc_mask) + bc_values
+  else:
+    x[:, 0, :] = bc[:, 0:1]
+    x[:, -1, :] = bc[:, 1:2]
+    x[:, :, 0] = bc[:, 2:3]
+    x[:, :, -1] = bc[:, 3:4]
   return x
 
 def pad_boundary(x, bc):
@@ -69,23 +75,30 @@ def fd_step(x, bc, f):
   One update of Jacobi iterative method.
   x: torch tensor of size (batch_size x H x W)
   '''
-  x = set_boundary(x, bc)
   # Convolution
-  y = F.conv2d(x.unsqueeze(1), update_kernel.view(1, 1, 3, 3))
-  # Add boundaries back
-  y = F.pad(y, (1, 1, 1, 1)).view_as(x)
-  y = set_boundary(y, bc)
+  y = F.conv2d(x.unsqueeze(1), update_kernel.view(1, 1, 3, 3), padding=1).view_as(x)
   if f is not None:
     y = y - f
+  y = set_boundary(y, bc)
   return y
 
-def fd_error(x, f, aggregate='max'):
+def fd_error(x, f, bc=None, aggregate='max'):
   '''
   Use loss kernel to calculate absolute error.
   l = Au - f.
   '''
-  l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3))
-  l = l - f[:, 1:-1, 1:-1]
+  if bc is None:
+    # Original bc
+    l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3)).squeeze(1)
+    if f is not None:
+      l = l - f[:, 1:-1, 1:-1]
+  else:
+    # bc mask
+    l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3), padding=1).squeeze(1)
+    if f is not None:
+      l = l - f
+    l = l * (1 - bc['bc_mask'])
+
   l = l.view(l.size(0), -1)
   if aggregate == 'max':
     error = torch.abs(l).max(dim=1)[0]

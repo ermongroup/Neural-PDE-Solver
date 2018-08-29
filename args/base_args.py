@@ -58,6 +58,7 @@ class BaseArgs:
 
     # for convenience
     opt.is_train, opt.split = self.is_train, self.split
+    assert (opt.image_size - 1) % 16 == 0, 'image_size must be 2^n + 1'
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
     if opt.is_train:

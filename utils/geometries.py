@@ -1,6 +1,21 @@
 import numpy as np
 import cv2
 
+def get_geometry(geometry, image_size, batch_size, max_temp):
+  if geometry == 'cylinders':
+    x, bc, bc_mask = [], [], []
+    for i in range(batch_size):
+      x_i, bc_i, bc_mask_i = cylinders(image_size)
+      x.append(x_i)
+      bc.append(bc_i)
+      bc_mask.append(bc_mask_i)
+    x = np.stack(x, axis=0) * max_temp
+    bc = np.stack(bc, axis=0) * max_temp
+    bc_mask = np.stack(bc_mask, axis=0)
+    return x, bc, bc_mask
+  else:
+    raise NotImplementedError
+
 def cylinders(image_size):
   '''
   Return geometry of inner and outer cylinders.
