@@ -32,7 +32,7 @@ def yellow(string):
 def red(string):
   return '\033[91m'+string+'\033[0m'
 
-def plot(data_list, config):
+def plot_curves(data_list, config):
   '''
   data_list: A list of dictionaries.
   config: plot configurations.
@@ -60,6 +60,21 @@ def plot(data_list, config):
     img = img.resize(config['image_size'])
   img = np.array(img) # H x W x 3
   return img
+
+def plot_data(x):
+  '''
+  x: H x W.
+  '''
+  x = to_numpy(x)
+  fig = plt.figure()
+  plt.imshow(x)
+  plt.colorbar()
+  fig.canvas.draw()
+  plt.close()
+  w, h = fig.canvas.get_width_height()
+  data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+  data = data.reshape((h, w, 3))
+  return data
 
 def gaussian(image_size):
   '''

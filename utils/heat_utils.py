@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 import torchvision
 
-from .misc import plot
+from .misc import plot_curves, plot_data
 
 # Kernels
 update_kernel = np.array([[0, 1, 0],
@@ -69,18 +69,23 @@ def initialize(x, bc, initialization):
   '''
   Initialize data x.
   x: batch_size x H x W
-  bc: batch_size x 4
+  bc: (batch_size x 4) or (batch_size x 2 x H x W)
   '''
   batch_size, image_size, _ = x.size()
-  # Initialize inner part
-  if initialization == 'zero':
-    x[:, 1:-1, 1:-1] = 0
-  elif initialization == 'random':
-    x[:, 1:-1, 1:-1] = torch.rand(batch_size, image_size - 2, image_size - 2)
-  elif initialization == 'avg':
-    x[:, 1:-1, 1:-1] = torch.mean(bc, dim=1).view(batch_size, 1, 1)
+  if is_bc_mask(x, bc):
+    if initialization == 'random':
+      x = torch.rand_like(x)
+      x = set_boundary(x, bc)
   else:
-    raise NotImplementedError
+    # Initialize inner part
+    if initialization == 'zero':
+      x[:, 1:-1, 1:-1] = 0
+    elif initialization == 'random':
+      x[:, 1:-1, 1:-1] = torch.rand(batch_size, image_size - 2, image_size - 2)
+    elif initialization == 'avg':
+      x[:, 1:-1, 1:-1] = torch.mean(bc, dim=1).view(batch_size, 1, 1)
+    else:
+      raise NotImplementedError
   return x
 
 def fd_step(x, bc, f):
@@ -170,23 +175,34 @@ def calculate_errors(x, bc, f, gt, iter_func, n_steps, starting_error):
 def plot_error_curves(results, num=None):
   '''
   Plot model and Jacobi error curves.
-  results: dictionary of torch Tensors with size (batch_size x n_steps),
-           returned by model.evaluate().
+  results: dictionary of torch Tensors, returned by model.evaluate().
   Return images: torch Tensor, size (3 x H x (W * num))
   '''
   W, H = 640, 480
   images = []
   if num is None:
-    num = results['Jacobi errors'].size(0)
+    num = results['model errors'].size(0)
   for i in range(num):
     curves = []
     for label in results.keys():
       curves.append({'y': results[label][i], 'label': label})
-    img = plot(curves, config={'title': 'Error curves', 'image_size': (W, H),
-                               'xlabel': 'iterations'})
+    img = plot_curves(curves, config={'title': 'Error curves', 'image_size': (W, H),
+                                      'xlabel': 'iterations'})
     img = img.transpose((2, 0, 1)) / 255 # 3 x H x W
     images.append(torch.Tensor(img))
   images = torchvision.utils.make_grid(images, nrow=num)
+  return images
+
+def plot_results(results):
+  '''
+  Plot x and gt.
+  results: dictionary of torch Tensors with size (batch_size x n_steps),
+  '''
+  x_img = plot_data(results['x'][0])
+  gt_img = plot_data(results['gt'][0])
+  x_img = torch.Tensor(x_img.transpose((2, 0, 1)) / 255) # 3 x H x W
+  gt_img = torch.Tensor(gt_img.transpose((2, 0, 1)) / 255) # 3 x H x W
+  images = torchvision.utils.make_grid([x_img, gt_img], nrow=2)
   return images
 
 def construct_matrix(bc, image_size, iter_func):

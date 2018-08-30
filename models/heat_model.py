@@ -137,7 +137,7 @@ class HeatModel(BaseModel):
       results['Jacobi errors'] = fd_errors
 
     # error of model
-    errors, _ = utils.calculate_errors(x, bc, f, gt, self.iter_step, n_steps, starting_error)
+    errors, x = utils.calculate_errors(x, bc, f, gt, self.iter_step, n_steps, starting_error)
     results['model errors'] = errors
 
-    return results
+    return results, x

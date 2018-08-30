@@ -17,21 +17,23 @@ def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
                      model.compare_model.name(), model.compare_model.n_operations))
 
   metric = utils.Metrics(scale=model.operations_ratio, error_threshold=error_threshold)
-  images = []
+  images = {'error_curves': [], 'results': []}
 
   for step, data in enumerate(data_loader):
-    bc, final, x = data['bc'], data['final'], data['x']
+    bc, gt, x = data['bc'], data['final'], data['x']
     f = None if 'f' not in data else data['f']
     if opt.initialization != 'random':
       # Test time: do not change data if 'random'
       x = utils.initialize(x, bc, opt.initialization)
-    error_dict = model.evaluate(x, final, bc, f, opt.n_evaluation_steps)
+    results, x = model.evaluate(x, gt, bc, f, opt.n_evaluation_steps)
     # Update metric
-    metric.update(error_dict)
+    metric.update(results)
 
     if step % opt.log_every == 0:
-      img = utils.plot_error_curves(error_dict, num=4)
-      images.append(img)
+      img = utils.plot_error_curves(results, num=4)
+      images['error_curves'].append(img)
+      img = utils.plot_results({'x': x, 'gt': gt})
+      images['results'].append(img)
     if (step + 1) % opt.log_every == 0:
       print('Step {}'.format(step + 1))
     if limit is not None and (step + 1) == limit:
@@ -66,9 +68,9 @@ def check_eigenvalues(opt, model, logger, vis):
     w_fd = sorted(np.abs(w_fd))
     print('Finite difference eigenvalues:\n{}\n'.format(w_fd))
     if vis is not None:
-      img = utils.plot([{'y': w_fd, 'label': 'Jacobi eigenvalues'},
-                        {'y': w, 'label': 'model eigenvalues'}],
-                       config={'title': 'Eigenvalues'})
+      img = utils.plot_curves([{'y': w_fd, 'label': 'Jacobi eigenvalues'},
+                               {'y': w, 'label': 'model eigenvalues'}],
+                              config={'title': 'Eigenvalues'})
       vis.add_image({'eigenvalues': img})
 
 def test(opt, model, data_loader, logger, vis=None):
@@ -87,15 +89,17 @@ def test(opt, model, data_loader, logger, vis=None):
   # random initialization
   results, images = evaluate(opt, model, data_loader, logger)
   if vis is not None:
-    for i, img in enumerate(images):
+    for i, img in enumerate(images['error_curves']):
       vis.add_image({'errors_{}_init'.format(opt.initialization): img}, i)
 
   # avg initialization
   opt.initialization = 'avg'
   results, images = evaluate(opt, model, data_loader, logger)
   if vis is not None:
-    for i, img in enumerate(images):
+    for i, img in enumerate(images['error_curves']):
       vis.add_image({'errors_avg_init': img}, i)
+    for i, img in enumerate(images['results']):
+      vis.add_image({'results': img}, i)
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')
