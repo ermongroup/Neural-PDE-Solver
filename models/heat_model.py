@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from .base_model import BaseModel
-from .iterators import *
+from .get_iterator import get_iterator
 import utils
 
 class HeatModel(BaseModel):
@@ -13,38 +13,8 @@ class HeatModel(BaseModel):
     self.is_train = opt.is_train
 
     # Iterator
-    if opt.iterator == 'jacobi':
-      self.iterator = JacobiIterator().cuda()
-      self.is_train = False
-    elif opt.iterator == 'multigrid':
-      self.iterator = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,
-                                        opt.mg_post_smoothing).cuda()
-      self.is_train = False
-    elif opt.iterator == 'cg':
-      self.iterator = ConjugateGradient(opt.cg_n_iters)
-      self.is_train = False
-    elif opt.iterator == 'conv':
-      self.iterator = ConvIterator(opt.activation, opt.conv_n_layers).cuda()
-    elif opt.iterator == 'unet':
-      self.iterator = UNetIterator(opt.activation, opt.mg_n_layers,
-                                   opt.mg_pre_smoothing, opt.mg_post_smoothing).cuda()
-    else:
-      raise NotImplementedError
+    self.iterator, self.compare_model, self.operations_ratio = get_iterator(opt)
     self.nets['iterator'] = self.iterator
-
-    # Compare to Jacobi methods
-    if opt.iterator == 'conv' or opt.iterator == 'multigrid':
-      self.compare_model = JacobiIterator()
-    elif opt.iterator == 'unet' or opt.iterator == 'cg':
-      self.compare_model = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,
-                                             opt.mg_post_smoothing)
-    else:
-      self.compare_model = None
-    # ratio of operations
-    if self.compare_model is not None:
-      self.operations_ratio = self.iterator.n_operations / self.compare_model.n_operations
-    else:
-      self.operations_ratio = 1
 
     if self.is_train:
       self.criterion_mse = nn.MSELoss().cuda()

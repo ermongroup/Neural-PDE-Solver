@@ -80,7 +80,7 @@ class HeatDataset(data.Dataset):
     return self.n_instances * self.batch_size
 
 
-def make_dataset(root, is_train, max_temp, data_limit):
+def make_geometry_dataset(root, is_train, max_temp, data_limit):
   n_instances = len(os.listdir(os.path.join(root, 'frames')))
   # No train test split yet.
   if data_limit > 0 and data_limit < n_instances:
@@ -99,7 +99,7 @@ class HeatGeometryDataset(data.Dataset):
   Heat Dataset on square geometry.
   '''
   def __init__(self, root, is_train, max_temp, data_limit):
-    self.data = make_dataset(root, is_train, max_temp, data_limit)
+    self.data = make_geometry_dataset(root, is_train, max_temp, data_limit)
 
     self.n_instances = len(self.data)
     self.batch_size = self.data[0].shape[0]

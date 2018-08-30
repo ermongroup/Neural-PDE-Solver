@@ -45,8 +45,8 @@ def main():
                       .format(w[-1], w[-2], w[-3], w[-4]))
 
       # Evaluate entire val set
-      results, error_curves = evaluate(opt, model, val_loader, logger)
-      vis.add_image({'errors': error_curves[0]}, epoch + 1)
+      results, images = evaluate(opt, model, val_loader, logger)
+      vis.add_image({'errors': images['error_curves'][0]}, epoch + 1)
       vis.add_scalar({'steps': {'Jacobi': results['Jacobi'], 'model': results['model']},
                       'ratio': results['ratio']}, epoch + 1)
 
