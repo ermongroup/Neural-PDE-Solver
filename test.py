@@ -86,11 +86,12 @@ def test(opt, model, data_loader, logger, vis=None):
   for key in state_dict.keys():
     logger.print('{}\n{}'.format(key, state_dict[key]))
 
-  # random initialization
-  results, images = evaluate(opt, model, data_loader, logger)
-  if vis is not None:
-    for i, img in enumerate(images['error_curves']):
-      vis.add_image({'errors_{}_init'.format(opt.initialization): img}, i)
+  if opt.geometry == 'square':
+    # random initialization
+    results, images = evaluate(opt, model, data_loader, logger)
+    if vis is not None:
+      for i, img in enumerate(images['error_curves']):
+        vis.add_image({'errors_{}_init'.format(opt.initialization): img}, i)
 
   # avg initialization
   opt.initialization = 'avg'
@@ -106,6 +107,8 @@ def main():
   # Load model opt
   model_opt = np.load(os.path.join(opt.ckpt_path, 'opt.npy')).item()
   model_opt.is_train = False
+  # Change geometry to the testing one
+  model_opt.geometry = opt.geometry
   model = HeatModel(model_opt)
   logger.print('Loading data from {}'.format(opt.dset_path))
 

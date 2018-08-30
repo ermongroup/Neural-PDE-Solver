@@ -17,6 +17,10 @@ def get_iterator(opt):
   else:
     raise NotImplementedError
 
+  if opt.geometry != 'square':
+    # Set is_bc_mask to True if geometry is not square
+    iterator.is_bc_mask = True
+
   # Compare to Jacobi methods
   if opt.iterator == 'conv' or opt.iterator == 'multigrid':
     compare_model = JacobiIterator()

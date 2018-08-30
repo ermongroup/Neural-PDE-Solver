@@ -12,6 +12,8 @@ class Iterator(nn.Module):
     self.fd_update_kernel = utils.update_kernel.view(1, 1, 3, 3).cuda()
     self.fd_loss_kernel = utils.loss_kernel.view(1, 1, 3, 3).cuda()
 
+    self.is_bc_mask = False
+
   def activation(self, x):
     ''' Apply activation '''
     if self.act == 'sigmoid':

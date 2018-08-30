@@ -249,15 +249,18 @@ def calculate_eigenvalues(model, image_size=16):
   Construct update matrix of the model, and calculate eigenvalues and eigenvectors.
   Return eigenvalues w and eigenvectors v.
   '''
-  # Remove activation first
+  # Remove activation and bc_mask
   activation = model.get_activation()
+  is_bc_mask = model.iterator.is_bc_mask
   model.change_activation('none')
+  model.iterator.is_bc_mask = False
   # Any bc works, won't change eigenvalues
   test_bc = np.zeros((1, 4))
   A, B = construct_matrix(test_bc, image_size, model.iter_step)
   w, v = np.linalg.eig(B)
-  # Add activation back
+  # Change back to original setting
   model.change_activation(activation)
+  model.iterator.is_bc_mask = is_bc_mask
   return w, v
 
 def restriction(x, bc):
