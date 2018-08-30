@@ -21,10 +21,11 @@ def test_geometry(data_dir, geometry, image_size):
     frames = np.load(os.path.join(data_dir, 'frames', '{:04d}.npy'.format(i)))
     batch_size = frames.shape[0]
     assert frames.shape == (batch_size, 4, image_size, image_size), frames.shape
-    j = np.random.randint(batch_size)
-    x, gt, bc_values, bc_mask = frames[j, 0], frames[j, 1], frames[j, 2], frames[j, 3]
-    assert np.all(x < 100.00001), x
-    assert np.all(gt < 100.00001), gt
+    data = frames
+    data[:, :3] /= 100
+    x, gt, bc_values, bc_mask = data[:, 0], data[:, 1], data[:, 2], data[:, 3]
+    assert np.all(x < 1.00001), x
+    assert np.all(gt < 1.00001), gt
     assert np.all(np.logical_or(np.isclose(bc_mask, 0), np.isclose(bc_mask, 1)))
 
 if __name__ == '__main__':

@@ -26,15 +26,28 @@ if torch.cuda.is_available():
   loss_kernel = loss_kernel.cuda()
   restriction_kernel = restriction_kernel.cuda()
 
+def is_bc_mask(x, bc):
+  '''
+  If bc is a mask, then it should be (batch_size x 2 x image_size x image_size).
+  Otherwise it should be (batch_size x 4).
+  '''
+  batch_size, image_size, _ = x.size()
+  if bc.size() == (batch_size, 2, image_size, image_size):
+    return True
+  elif bc.size() == (batch_size, 4):
+    return False
+  else:
+    raise Exception
+
 def set_boundary(x, bc):
   '''
   x: batch_size x H x W
-  bc: batch_size x 4
+  bc: (batch_size x 4) or (batch_size x 2 x image_size x image_size)
   '''
-  if isinstance(bc, dict):
+  if is_bc_mask(x, bc):
     # bc and bc_mask
-    bc_values = bc['bc_values']
-    bc_mask = bc['bc_mask']
+    bc_values = bc[:, 0]
+    bc_mask = bc[:, 1]
     x = x * (1 - bc_mask) + bc_values
   else:
     x[:, 0, :] = bc[:, 0:1]
@@ -87,12 +100,12 @@ def fd_error(x, bc, f, aggregate='max'):
   Use loss kernel to calculate absolute error.
   l = Au - f.
   '''
-  if isinstance(bc, dict):
+  if is_bc_mask(x, bc):
     # bc mask
     l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3), padding=1).squeeze(1)
     if f is not None:
       l = l - f
-    l = l * (1 - bc['bc_mask'])
+    l = l * (1 - bc[:, 1])
   else:
     # Original bc
     l = F.conv2d(x.unsqueeze(1), loss_kernel.view(1, 1, 3, 3)).squeeze(1)

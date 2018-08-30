@@ -33,6 +33,9 @@ def make_dataset(root, is_train, max_temp, data_limit):
   return bc, data
 
 class HeatDataset(data.Dataset):
+  '''
+  Heat Dataset on square geometry.
+  '''
   def __init__(self, root, is_train, max_temp, data_limit):
     self.bc, self.data = make_dataset(root, is_train, max_temp, data_limit)
 
@@ -71,6 +74,58 @@ class HeatDataset(data.Dataset):
     bc, x, final = torch.Tensor(bc), torch.Tensor(x), torch.Tensor(final)
 
     results = {'bc': bc, 'final': final, 'x': x}
+    return results
+
+  def __len__(self):
+    return self.n_instances * self.batch_size
+
+
+def make_dataset(root, is_train, max_temp, data_limit):
+  n_instances = len(os.listdir(os.path.join(root, 'frames')))
+  # No train test split yet.
+  if data_limit > 0 and data_limit < n_instances:
+    n_instances = data_limit
+
+  data = []
+  for i in range(n_instances):
+    path = os.path.join(root, 'frames', '{:04d}.npy'.format(i))
+    frames = np.load(path) # batch_size x 4 x image_size x image_size
+    frames[:, :3] /= max_temp # Normalize
+    data.append(frames)
+  return data
+
+class HeatGeometryDataset(data.Dataset):
+  '''
+  Heat Dataset on square geometry.
+  '''
+  def __init__(self, root, is_train, max_temp, data_limit):
+    self.data = make_dataset(root, is_train, max_temp, data_limit)
+
+    self.n_instances = len(self.data)
+    self.batch_size = self.data[0].shape[0]
+    self.is_train = is_train
+
+  def rotate(self, data):
+    ''' Random rotate '''
+    k = random.randint(0, 3)
+    if k > 0:
+      data = np.rot90(data, k, axes=(1, 2)).copy()
+    return data
+
+  def __getitem__(self, idx):
+    i = idx // self.batch_size # which instance
+    j = idx % self.batch_size # which batch
+
+    frames = self.data[i][j] # 4 x image_size x image_size
+    if self.is_train:
+      # Random rotate
+      frames = self.rotate(frames)
+
+    x = torch.Tensor(frames[0])
+    final = torch.Tensor(frames[1])
+    bc = torch.Tensor(frames[2:])
+
+    results = {'x': x, 'final': final, 'bc': bc}
     return results
 
   def __len__(self):

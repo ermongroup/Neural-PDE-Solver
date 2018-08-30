@@ -12,6 +12,8 @@ class BaseArgs:
     # data
     self.parser.add_argument('--dset_dir', type=str, default=os.path.join(os.environ['HOME'], 'slowbro', 'PDE'))
     self.parser.add_argument('--dset_name', type=str, default='heat')
+    self.parser.add_argument('--geometry', type=str, default='square',
+                             choices=['square', 'cylinders'])
     self.parser.add_argument('--batch_size', type=int, default=4)
     self.parser.add_argument('--image_size', type=int, default=64)
     # Specific
@@ -60,7 +62,7 @@ class BaseArgs:
     opt.is_train, opt.split = self.is_train, self.split
     assert (opt.image_size - 1) % 16 == 0, 'image_size must be 2^n + 1'
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
-    opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, image_size_str)
+    opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, opt.geometry, image_size_str)
     if opt.is_train:
       if opt.iterator == 'jacobi' or opt.iterator == 'multigrid' or opt.iterator == 'cg':
         # No training needed

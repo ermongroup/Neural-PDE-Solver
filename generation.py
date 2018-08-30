@@ -121,22 +121,20 @@ def generate_geometry(opt):
   for run in range(opt.n_runs):
     x, bc_values, bc_mask = utils.get_geometry(opt.geometry, opt.image_size,
                                                opt.batch_size, opt.max_temp)
+    bc = np.stack([bc_values, bc_mask], axis=1) # batch_size x 2 x image_size x image_size
     x = torch.Tensor(x)
-    bc_values = torch.Tensor(bc_values)
-    bc_mask = torch.Tensor(bc_mask)
+    bc = torch.Tensor(bc)
     f = None
     if torch.cuda.is_available():
       x = x.cuda()
-      bc_values = bc_values.cuda()
-      bc_mask = bc_mask.cuda()
-    bc = {'bc_values': bc_values, 'bc_mask': bc_mask}
+      bc = bc.cuda()
 
     # Find solution
     frames = get_solution(x, bc, f)
     assert frames.shape[1] == 2
     # Add bc and mask
-    data = np.concatenate([frames, bc_values.unsqueeze(1).cpu().numpy(),
-                           bc_mask.unsqueeze(1).cpu().numpy()], axis=1)
+    data = np.concatenate([frames, bc_values[:, np.newaxis, :, :],
+                           bc_mask[:, np.newaxis, :, :]], axis=1)
     np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), data)
     print('Run {} saved.'.format(run))
 

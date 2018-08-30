@@ -1,12 +1,12 @@
 import torch.utils.data as data
 
-from .heat_data import HeatDataset
+from .heat_data import HeatDataset, HeatGeometryDataset
 
 def get_dataset(opt):
-  if opt.dset_name == 'heat':
+  if opt.geometry == 'square':
     dset = HeatDataset(opt.dset_path, opt.is_train, opt.max_temp, opt.data_limit)
   else:
-    raise NotImplementedError
+    dset = HeatGeometryDataset(opt.dset_path, opt.is_train, opt.max_temp, opt.data_limit)
   return dset
 
 def get_data_loader(opt):
