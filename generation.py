@@ -133,8 +133,11 @@ def generate_geometry(opt):
 
     # Find solution
     frames = get_solution(x, bc, f)
-    assert frames.shape[1] == opt.n_frames + 1
-    np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), frames)
+    assert frames.shape[1] == 2
+    # Add bc and mask
+    data = np.concatenate([frames, bc_values.unsqueeze(1).cpu().numpy(),
+                           bc_mask.unsqueeze(1).cpu().numpy()], axis=1)
+    np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), data)
     print('Run {} saved.'.format(run))
 
 if __name__ == '__main__':

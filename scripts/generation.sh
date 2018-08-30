@@ -1,7 +1,7 @@
 #!/bin/bash
-CUDA_VISIBLE_DEVICES=0 \
+CUDA_VISIBLE_DEVICES=3 \
 python generation.py \
-  --image_size 15 \
-  --n_frames 1 \
+  --image_size 257 \
   --save_every 1 \
-  --n_runs 1000
+  --geometry cylinders \
+  --n_runs 200
