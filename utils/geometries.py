@@ -63,7 +63,8 @@ def Lshape(image_size):
   '''
   x = np.random.randint(image_size // 8 * 3, image_size // 8 * 5)
   y = np.random.randint(image_size // 8 * 3, image_size // 8 * 5)
-  temperatures = np.random.rand(4)
+  temperatures = np.concatenate([np.random.uniform(0.5, 1, size=2),
+                                 np.random.uniform(0, 0.5, size=2)])
 
   bc_mask = np.zeros((image_size, image_size))
   bc_mask[:x, :y] = 1
@@ -74,17 +75,25 @@ def Lshape(image_size):
 
   bc_values = np.zeros((image_size, image_size))
   bc_values[0, :] = temperatures[0]
-  bc_values[-1, :] = temperatures[1]
-  bc_values[:, 0] = temperatures[2]
+  bc_values[:, 0] = temperatures[1]
+  bc_values[-1, :] = temperatures[2]
   bc_values[:, -1] = temperatures[3]
   # Upper corner
   for i in range(x):
     for j in range(y):
       if i != 0 and j / i < y / x:
-        bc_values[i, j] = temperatures[2]
+        bc_values[i, j] = temperatures[1]
       else:
         bc_values[i, j] = temperatures[0]
 
   x = np.ones((image_size, image_size)) * temperatures.mean()
   x = x * (1 - bc_mask) + bc_values
+
+  # Random rotate
+  k = np.random.randint(4)
+  if k > 0:
+    x = np.rot90(x, k).copy()
+    bc_values = np.rot90(bc_values, k).copy()
+    bc_mask = np.rot90(bc_mask, k).copy()
+
   return x, bc_values, bc_mask
