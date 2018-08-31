@@ -63,7 +63,11 @@ def check_eigenvalues(opt, model, logger, vis):
 
   # Finite difference
   if model.compare_model is not None:
+    # Change is_bc_mask to False
+    is_bc_mask = model.compare_model.is_bc_mask
+    model.compare_model.is_bc_mask = False
     A, B = utils.construct_matrix(np.zeros((1, 4)), image_size, model.compare_model.iter_step)
+    model.compare_model.is_bc_mask = is_bc_mask
     w_fd, v_fd = np.linalg.eig(B)
     w_fd = sorted(np.abs(w_fd))
     print('Finite difference eigenvalues:\n{}\n'.format(w_fd))

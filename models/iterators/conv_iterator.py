@@ -22,20 +22,20 @@ class ConvIterator(Iterator):
     return: same size
     '''
     x = x.unsqueeze(1)
-    z = F.conv2d(x, self.fd_update_kernel, padding=0)
+    y = F.conv2d(x, self.fd_update_kernel, padding=0)
     if f is not None:
-      z = z - f.unsqueeze(1)[:, :, 1:-1, 1:-1]
-    y = z - x[:, :, 1:-1, 1:-1]
+      y = y - f.unsqueeze(1)[:, :, 1:-1, 1:-1]
+    r = y - x[:, :, 1:-1, 1:-1]
 
     if self.is_bc_mask:
       mask = 1 - bc[:, 1:, 1:-1, 1:-1] # foreground mask
 
     for i in range(self.n_layers):
-      y = self.layers[i](y)
+      r = self.layers[i](r)
       if self.is_bc_mask:
-        y = y * mask
+        r = r * mask
 
-    y = z + y # residual
+    y = y + r # residual
 
     y = self.activation(y)
     # Set boundary

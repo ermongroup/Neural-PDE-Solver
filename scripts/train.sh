@@ -9,11 +9,11 @@ python train.py \
   --max_iter_steps 20 \
   --max_iter_steps_from_gt 0 \
   --n_evaluation_steps 400 \
-  --image_size 63 \
-  --iterator multigrid \
-  --conv_n_layers 1 \
-  --mg_n_layers 4 \
+  --image_size 65 \
+  --iterator unet \
+  --conv_n_layers 3 \
+  --mg_n_layers 3 \
   --mg_pre_smoothing 2 \
   --mg_post_smoothing 2 \
   --initialization random \
-  --ckpt_name test
+  --ckpt_name ''

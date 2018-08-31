@@ -275,16 +275,6 @@ def restriction(x, bc):
   y = pad_boundary(y, bc)
   return y
 
-def subsample(x):
-  '''
-  Bilinear subsampling.
-  Return: downsampled x of size (N - 1) / 2 + 1. Ex. 33 -> 17
-  '''
-  _, image_size, _ = x.size()
-  new_size = (image_size - 1) // 2 + 1
-  y = F.interpolate(x.unsqueeze(1), size=new_size, mode='bilinear', align_corners=True)
-  return y.squeeze(1)
-
 def interpolation(x, bc):
   '''
   Size of x must be odd.
@@ -296,3 +286,13 @@ def interpolation(x, bc):
   y = F.interpolate(x.unsqueeze(1), size=new_size, mode='bilinear', align_corners=True)
   y = set_boundary(y.squeeze(1), bc)
   return y
+
+def subsample(x):
+  '''
+  Bilinear subsampling.
+  Return: downsampled x of size (N - 1) / 2 + 1. Ex. 33 -> 17
+  '''
+  _, image_size, _ = x.size()
+  new_size = (image_size - 1) // 2 + 1
+  y = F.interpolate(x.unsqueeze(1), size=new_size, mode='bilinear', align_corners=True)
+  return y.squeeze(1)
