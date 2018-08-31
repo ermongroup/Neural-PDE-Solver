@@ -27,9 +27,10 @@ def test_geometry(data_dir, geometry, image_size):
     assert np.all(x < 1.00001), x
     assert np.all(gt < 1.00001), gt
     assert np.all(np.logical_or(np.isclose(bc_mask, 0), np.isclose(bc_mask, 1)))
+    assert np.all(bc_values[bc_mask == 0] == 0)
 
 if __name__ == '__main__':
-  data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/17x17')
+  data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/square/17x17')
   test(data_dir)
 
   data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/')

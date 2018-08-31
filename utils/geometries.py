@@ -3,18 +3,22 @@ import cv2
 
 def get_geometry(geometry, image_size, batch_size, max_temp):
   if geometry == 'cylinders':
-    x, bc, bc_mask = [], [], []
-    for i in range(batch_size):
-      x_i, bc_i, bc_mask_i = cylinders(image_size)
-      x.append(x_i)
-      bc.append(bc_i)
-      bc_mask.append(bc_mask_i)
-    x = np.stack(x, axis=0) * max_temp
-    bc = np.stack(bc, axis=0) * max_temp
-    bc_mask = np.stack(bc_mask, axis=0)
-    return x, bc, bc_mask
+    geom = cylinders
+  elif geometry == 'Lshape':
+    geom = Lshape
   else:
     raise NotImplementedError
+
+  x, bc, bc_mask = [], [], []
+  for i in range(batch_size):
+    x_i, bc_i, bc_mask_i = geom(image_size)
+    x.append(x_i)
+    bc.append(bc_i)
+    bc_mask.append(bc_mask_i)
+  x = np.stack(x, axis=0) * max_temp
+  bc = np.stack(bc, axis=0) * max_temp
+  bc_mask = np.stack(bc_mask, axis=0)
+  return x, bc, bc_mask
 
 def cylinders(image_size):
   '''
@@ -52,3 +56,35 @@ def cylinders(image_size):
   x = np.zeros_like(x)
   x = bc + (1 - bc_mask) * (v1 + v2 + 1) / 3
   return x, bc, bc_mask
+
+def Lshape(image_size):
+  '''
+  Return L-shape geometry.
+  '''
+  x = np.random.randint(image_size // 4 + 1, image_size // 4 * 3)
+  y = np.random.randint(image_size // 4 + 1, image_size // 4 * 3)
+  temperatures = np.random.rand(6)
+
+  bc_mask = np.zeros((image_size, image_size))
+  bc_mask[:x, :y] = 1
+  bc_mask[0, :] = 1
+  bc_mask[-1, :] = 1
+  bc_mask[:, 0] = 1
+  bc_mask[:, -1] = 1
+
+  bc_values = np.zeros((image_size, image_size))
+  bc_values[0, :] = temperatures[0]
+  bc_values[-1, :] = temperatures[1]
+  bc_values[:, 0] = temperatures[2]
+  bc_values[:, -1] = temperatures[3]
+  # Upper corner
+  for i in range(x):
+    for j in range(y):
+      if j / i < y / x:
+        bc_values[i, j] = temperatures[4]
+      else:
+        bc_values[i, j] = temperatures[5]
+
+  x = np.ones((image_size, image_size)) * temperatures.mean()
+  x = x * (1 - bc_mask) + bc_values
+  return x, bc_values, bc_mask
