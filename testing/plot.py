@@ -13,7 +13,7 @@ plt.plot(x, b, label='b')
 plt.xlabel('iterations')
 plt.legend()
 plt.title('Test')
-#plt.savefig('test.png')
+plt.savefig('test.png')
 
 # Save to numpy array
 fig.canvas.draw()

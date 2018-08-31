@@ -282,7 +282,7 @@ def subsample(x):
   _, image_size, _ = x.size()
   new_size = (image_size - 1) // 2 + 1
   y = F.interpolate(x.unsqueeze(1), size=new_size, mode='bilinear', align_corners=True)
-  return y
+  return y.squeeze(1)
 
 def interpolation(x, bc):
   '''

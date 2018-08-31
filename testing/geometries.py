@@ -6,6 +6,11 @@ import matplotlib.pyplot as plt
 
 import utils
 
+def plot(x):
+  plt.imshow(x)
+  plt.colorbar()
+  plt.show()
+
 def get_geometry():
   image_size = 255
   c = (image_size + 1) // 2
@@ -43,30 +48,18 @@ def get_geometry():
   assert not np.any(values > 1)
   assert not np.any(mask > 1)
 
-  plt.imshow(values)
-  plt.colorbar()
-  plt.show()
+  plot(values)
+  plot(mask)
 
-  plt.imshow(mask)
-  plt.colorbar()
-  plt.show()
   return values, mask
 
 def main():
 #  x, mask = get_geometry()
   x, bc, bc_mask = utils.cylinders(255)
 
-  plt.imshow(bc)
-  plt.colorbar()
-  plt.show()
-
-  plt.imshow(bc_mask)
-  plt.colorbar()
-  plt.show()
-
-  plt.imshow(x)
-  plt.colorbar()
-  plt.show()
+  plot(bc)
+  plot(bc_mask)
+  plot(x)
 
   image_size = x.shape[0]
   x = torch.Tensor(x).view(1, 1, image_size, image_size)
@@ -84,10 +77,23 @@ def main():
     print(error.cpu().numpy())
 
   x = x.squeeze().cpu().numpy()
-  plt.imshow(x)
-  plt.colorbar()
-  plt.show()
+  plot(x)
+
+def test_subsampling():
+  x, bc_values, bc_mask = utils.cylinders(65)
+  bc_values = torch.Tensor(bc_values).unsqueeze(0)
+  bc_mask = torch.Tensor(bc_mask).unsqueeze(0)
+  plot(bc_values.squeeze(0).numpy())
+  plot(bc_mask.squeeze(0).numpy())
+
+  n_layers = 3
+  for i in range(n_layers):
+    bc_values = utils.subsample(bc_values)
+    bc_mask = utils.subsample(bc_mask)
+    plot(bc_values.squeeze(0).numpy())
+    plot(bc_mask.squeeze(0).numpy())
 
 if __name__ == '__main__':
   np.random.seed(666)
-  main()
+  #main()
+  test_subsampling()
