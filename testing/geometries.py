@@ -53,24 +53,29 @@ def get_geometry():
 
   return values, mask
 
-def main():
+def test_geometry(geometry, image_size):
+  print('########### Test {} ##########\n'.format(geometry))
 #  x, mask = get_geometry()
-  x, bc, bc_mask = utils.cylinders(255)
+  x, bc_values, bc_mask = utils.get_geometry(geometry, image_size, 1, 1)
+  x = x.squeeze(0)
+  bc_values = bc_values.squeeze(0)
+  bc_mask = bc_mask.squeeze(0)
+  print(bc_mask)
 
-  plot(bc)
+  plot(bc_values)
   plot(bc_mask)
   plot(x)
 
   image_size = x.shape[0]
   x = torch.Tensor(x).view(1, 1, image_size, image_size)
+  bc_values = torch.Tensor(bc_values).view_as(x)
   bc_mask = torch.Tensor(bc_mask).view_as(x)
-  bc = torch.Tensor(bc).view_as(x)
 
   print(x.size())
 
   for i in range(1000):
     x = F.conv2d(x, utils.update_kernel.view(1, 1, 3, 3), padding=1)
-    x = x * (1 - bc_mask) + bc
+    x = x * (1 - bc_mask) + bc_values
     r = F.conv2d(x, utils.loss_kernel.view(1, 1, 3, 3), padding=1)
     r = r * (1 - bc_mask)
     error = torch.sum(r ** 2).squeeze()
@@ -79,10 +84,12 @@ def main():
   x = x.squeeze().cpu().numpy()
   plot(x)
 
-def test_subsampling():
-  x, bc_values, bc_mask = utils.cylinders(65)
-  bc_values = torch.Tensor(bc_values).unsqueeze(0)
-  bc_mask = torch.Tensor(bc_mask).unsqueeze(0)
+def test_subsampling(geometry, image_size):
+  print('########### Test subsampling ##########\n')
+  x, bc_values, bc_mask = utils.get_geometry(geometry, image_size, 1, 1)
+
+  bc_values = torch.Tensor(bc_values)
+  bc_mask = torch.Tensor(bc_mask)
   plot(bc_values.squeeze(0).numpy())
   plot(bc_mask.squeeze(0).numpy())
 
@@ -103,5 +110,6 @@ def test_subsampling():
 
 if __name__ == '__main__':
   np.random.seed(666)
-  #main()
-  test_subsampling()
+  geometry = 'Lshape'
+  test_geometry(geometry, 257)
+  test_subsampling(geometry, 65)

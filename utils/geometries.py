@@ -61,9 +61,9 @@ def Lshape(image_size):
   '''
   Return L-shape geometry.
   '''
-  x = np.random.randint(image_size // 4 + 1, image_size // 4 * 3)
-  y = np.random.randint(image_size // 4 + 1, image_size // 4 * 3)
-  temperatures = np.random.rand(6)
+  x = np.random.randint(image_size // 8 * 3, image_size // 8 * 5)
+  y = np.random.randint(image_size // 8 * 3, image_size // 8 * 5)
+  temperatures = np.random.rand(4)
 
   bc_mask = np.zeros((image_size, image_size))
   bc_mask[:x, :y] = 1
@@ -80,10 +80,10 @@ def Lshape(image_size):
   # Upper corner
   for i in range(x):
     for j in range(y):
-      if j / i < y / x:
-        bc_values[i, j] = temperatures[4]
+      if i != 0 and j / i < y / x:
+        bc_values[i, j] = temperatures[2]
       else:
-        bc_values[i, j] = temperatures[5]
+        bc_values[i, j] = temperatures[0]
 
   x = np.ones((image_size, image_size)) * temperatures.mean()
   x = x * (1 - bc_mask) + bc_values
