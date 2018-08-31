@@ -90,8 +90,16 @@ def test_subsampling():
   for i in range(n_layers):
     bc_values = utils.subsample(bc_values)
     bc_mask = utils.subsample(bc_mask)
-    plot(bc_values.squeeze(0).numpy())
-    plot(bc_mask.squeeze(0).numpy())
+
+    mask = bc_mask.squeeze(0).numpy()
+    assert np.all(np.logical_or(np.isclose(mask, 0), np.isclose(mask, 1)))
+
+    bc_values = bc_values * bc_mask
+    values = bc_values.squeeze(0).numpy()
+    assert np.all(values < 1.00001)
+
+    plot(values)
+    plot(mask)
 
 if __name__ == '__main__':
   np.random.seed(666)
