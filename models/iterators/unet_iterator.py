@@ -51,6 +51,8 @@ class UNetIterator(Iterator):
       for i in range(self.n_layers - 1):
         bc_mask = utils.subsample(bc_mask.squeeze(1)).unsqueeze(1)
         masks.append(1 - bc_mask[:, :, 1:-1, 1:-1])
+      # Multiply by mask
+      r = r * masks[0]
 
     intermediates = [] # used for skip connections
 

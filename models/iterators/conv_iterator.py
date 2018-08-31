@@ -29,6 +29,7 @@ class ConvIterator(Iterator):
 
     if self.is_bc_mask:
       mask = 1 - bc[:, 1:, 1:-1, 1:-1] # foreground mask
+      r = r * mask
 
     for i in range(self.n_layers):
       r = self.layers[i](r)

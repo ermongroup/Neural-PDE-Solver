@@ -20,13 +20,15 @@ def build(is_train, tb_dir=None):
   np.random.seed(666)
   random.seed(666)
 
+  # Add geometry to path name
   if tb_dir is not None:
-    tb_path = os.path.join(opt.ckpt_path, tb_dir)
+    tb_path = os.path.join(opt.ckpt_path, '{}_{}'.format(tb_dir, opt.geometry))
     vis = Visualizer(tb_path)
   else:
     vis = None
 
-  logger = Logger(opt.ckpt_path, opt.split)
+  logger_name = '{}_{}'.format(opt.split, opt.geometry)
+  logger = Logger(opt.ckpt_path, logger_name)
   stats = Statistics(opt.ckpt_path)
 
   logger.print(log)
