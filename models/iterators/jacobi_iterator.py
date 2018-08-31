@@ -36,19 +36,28 @@ class MultigridIterator(Iterator):
     One layer of multigrid. Recursive function.
     Find solution x to Ax + b = 0.
     '''
+    batch_size, image_size, _ = x.size()
     # Pre smoothing
     for i in range(self.pre_smoothing):
       x = utils.fd_step(x, bc, f)
 
     if step > 1:
       # Downsample
-      x_sub = utils.restriction(x, bc)
       if f is not None:
         f_sub = utils.subsample(f)
       else:
         f_sub = None
+
+      if self.is_bc_mask:
+        # Subsample geometry
+        bc_sub = utils.subsample(bc.view(batch_size * 2, image_size, image_size))
+        bc_sub = bc_sub.view(batch_size, 2, *bc_sub.size()[-2:])
+      else:
+        bc_sub = bc
+
+      x_sub = utils.restriction(x, bc_sub)
       # Refine x_sub recursively
-      x_sub = self.multigrid_step(x_sub, bc, f_sub, step - 1)
+      x_sub = self.multigrid_step(x_sub, bc_sub, f_sub, step - 1)
       # Upsample
       x = utils.interpolation(x_sub, bc)
 

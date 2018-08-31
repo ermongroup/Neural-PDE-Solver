@@ -37,6 +37,7 @@ def is_bc_mask(x, bc):
   elif bc.size() == (batch_size, 4):
     return False
   else:
+    print(x.size(), bc.size())
     raise Exception
 
 def set_boundary(x, bc):

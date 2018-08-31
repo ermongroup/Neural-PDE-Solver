@@ -10,10 +10,9 @@ import utils
 class HeatModel(BaseModel):
   def __init__(self, opt):
     super(HeatModel, self).__init__()
-    self.is_train = opt.is_train
 
     # Iterator
-    self.iterator, self.compare_model, self.operations_ratio = get_iterator(opt)
+    self.iterator, self.compare_model, self.operations_ratio, self.is_train = get_iterator(opt)
     self.nets['iterator'] = self.iterator
 
     if self.is_train:
