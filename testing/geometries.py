@@ -111,5 +111,6 @@ def test_subsampling(geometry, image_size):
 if __name__ == '__main__':
   np.random.seed(666)
   geometry = 'Lshape'
-  test_geometry(geometry, 257)
-  test_subsampling(geometry, 65)
+  for i in range(5):
+    test_geometry(geometry, 257)
+  #test_subsampling(geometry, 65)

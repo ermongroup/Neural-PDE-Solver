@@ -27,8 +27,8 @@ def gaussian(image_size=63):
   return kernel
 
 def test_heat():
-  image_size = 63
-  scale = np.random.uniform(300, 400) / (image_size ** 2)
+  image_size = 65
+  scale = np.random.uniform(350, 450) / (image_size ** 2)
   f = - gaussian(image_size) * scale
   f = torch.Tensor(f).unsqueeze(0)
   f = utils.pad_boundary(f, torch.zeros(1, 4))
@@ -40,11 +40,11 @@ def test_heat():
 
   y = x.clone()
   for i in range(2000):
-    y = utils.fd_step(y, bc)
+    y = utils.fd_step(y, bc, None)
 
   z = x.clone()
   for i in range(4000):
-    z = utils.fd_step(z, bc) - f
+    z = utils.fd_step(z, bc, f)
 
   # Au = 0
   A = utils.loss_kernel.view(1, 1, 3, 3)
