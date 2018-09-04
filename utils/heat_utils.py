@@ -200,8 +200,8 @@ def plot_results(results):
   Plot x and gt.
   results: dictionary of torch Tensors with size (batch_size x n_steps),
   '''
-  x_img = plot_data(results['x'][0])
-  gt_img = plot_data(results['gt'][0])
+  x_img = plot_data(results['x'][0], 'x')
+  gt_img = plot_data(results['gt'][0], 'Ground truth')
   x_img = torch.Tensor(x_img.transpose((2, 0, 1)) / 255) # 3 x H x W
   gt_img = torch.Tensor(gt_img.transpose((2, 0, 1)) / 255) # 3 x H x W
   images = torchvision.utils.make_grid([x_img, gt_img], nrow=2)

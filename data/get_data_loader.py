@@ -4,7 +4,7 @@ from .heat_data import HeatDataset, HeatGeometryDataset
 
 def get_dataset(opt):
   if opt.geometry == 'square':
-    dset = HeatDataset(opt.dset_path, opt.is_train, opt.max_temp, opt.data_limit)
+    dset = HeatDataset(opt.dset_path, opt.is_train, opt.max_temp, opt.data_limit, opt.poisson)
   else:
     dset = HeatGeometryDataset(opt.dset_path, opt.is_train, opt.max_temp, opt.data_limit)
   return dset

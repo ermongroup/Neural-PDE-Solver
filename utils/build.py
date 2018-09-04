@@ -23,11 +23,15 @@ def build(is_train, tb_dir=None):
   # Add geometry to path name
   if tb_dir is not None:
     tb_path = os.path.join(opt.ckpt_path, '{}_{}'.format(tb_dir, opt.geometry))
+    if opt.poisson:
+      tb_path = tb_path + '_poisson'
     vis = Visualizer(tb_path)
   else:
     vis = None
 
   logger_name = '{}_{}'.format(opt.split, opt.geometry)
+  if opt.poisson:
+    logger_name = logger_name + '_poisson'
   logger = Logger(opt.ckpt_path, logger_name)
   stats = Statistics(opt.ckpt_path)
 

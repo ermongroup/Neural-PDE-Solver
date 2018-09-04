@@ -61,7 +61,7 @@ def plot_curves(data_list, config):
   img = np.array(img) # H x W x 3
   return img
 
-def plot_data(x):
+def plot_data(x, title=''):
   '''
   x: H x W.
   '''
@@ -69,6 +69,7 @@ def plot_data(x):
   fig = plt.figure()
   plt.imshow(x)
   plt.colorbar()
+  plt.title(title)
   fig.canvas.draw()
   plt.close()
   w, h = fig.canvas.get_width_height()

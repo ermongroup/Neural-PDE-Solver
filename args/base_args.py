@@ -14,6 +14,7 @@ class BaseArgs:
     self.parser.add_argument('--dset_name', type=str, default='heat')
     self.parser.add_argument('--geometry', type=str, default='square',
                              choices=['square', 'cylinders', 'Lshape'])
+    self.parser.add_argument('--poisson', type=int, default=0)
     self.parser.add_argument('--batch_size', type=int, default=4)
     self.parser.add_argument('--image_size', type=int, default=64)
     # Specific
@@ -61,7 +62,10 @@ class BaseArgs:
     # for convenience
     opt.is_train, opt.split = self.is_train, self.split
     assert (opt.image_size - 1) % 16 == 0, 'image_size must be 2^n + 1'
+
     image_size_str = '{}x{}'.format(opt.image_size, opt.image_size)
+    if opt.poisson:
+      image_size_str = 'poisson_' + image_size_str
     opt.dset_path = os.path.join(opt.dset_dir, opt.dset_name, opt.geometry, image_size_str)
     if opt.is_train:
       if opt.iterator == 'jacobi' or opt.iterator == 'multigrid' or opt.iterator == 'cg':
