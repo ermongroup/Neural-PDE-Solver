@@ -29,9 +29,30 @@ def test_geometry(data_dir, geometry, image_size):
     assert np.all(np.logical_or(np.isclose(bc_mask, 0), np.isclose(bc_mask, 1)))
     assert np.all(bc_values[bc_mask == 0] == 0)
 
+def test_poisson(data_dir):
+  bc = np.load(os.path.join(data_dir, 'bc.npy'))
+  indices = np.random.randint(len(bc), size=10)
+  for i in indices:
+    frames = np.load(os.path.join(data_dir, 'frames', '{:04d}.npy'.format(i)))
+    batch_size, length, _, _ = frames.shape
+    assert length == 3
+    j = np.random.randint(batch_size)
+    assert np.allclose(frames[j, :2, 0, 1:-1], bc[i][j][0])
+    assert np.allclose(frames[j, :2, -1, 1:-1], bc[i][j][1])
+    assert np.allclose(frames[j, :2, :, 0], bc[i][j][2])
+    assert np.allclose(frames[j, :2, :, -1], bc[i][j][3])
+
+    assert np.allclose(frames[j, 2, 0, :], 0)
+    assert np.allclose(frames[j, 2, -1, :], 0)
+    assert np.allclose(frames[j, 2, :, 0], 0)
+    assert np.allclose(frames[j, 2, :, -1], 0)
+
 if __name__ == '__main__':
   data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/square/17x17')
   test(data_dir)
 
   data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/')
   test_geometry(data_dir, 'cylinders', 65)
+
+  data_dir = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/square/poisson_65x65')
+  test_poisson(data_dir)

@@ -18,7 +18,7 @@ parser.add_argument('--n_runs', type=int, default=1000)
 # data
 parser.add_argument('--image_size', type=int, default=17)
 parser.add_argument('--max_temp', type=int, default=100)
-parser.add_argument('--heat_source', type=int, default=0)
+parser.add_argument('--poisson', type=int, default=0)
 parser.add_argument('--geometry', type=str, default='square',
                     choices=['square', 'cylinders', 'Lshape'])
 
@@ -49,27 +49,38 @@ def get_solution(x, bc, f):
   return frames
 
 def get_heat_source(image_size, batch_size):
+  '''
+  Return a Gaussian heat source.
+  '''
   heat_src = []
   for i in range(batch_size):
-    scale = np.random.uniform(300, 400) / (image_size ** 2)
-    f = - utils.gaussian(image_size) * scale
-    f = torch.Tensor(f).unsqueeze(0) # (1 x image_size x image_size)
-    f = utils.pad_boundary(f, torch.zeros(1, 4))
+    scale = np.random.uniform(3, 3.5) / (image_size ** 2)
+    f = - utils.gaussian(image_size - 2) * scale # Negative
+    f = torch.Tensor(f).unsqueeze(0)
+    f = utils.pad_boundary(f, torch.zeros(1, 4)) # (1 x image_size x image_size)
     heat_src.append(f)
   heat_src = torch.cat(heat_src, dim=0)
+  if torch.cuda.is_available():
+    heat_src = heat_src.cuda()
   return heat_src
 
 def generate_square(opt):
   '''
   Generate data with square boundary conditions.
   '''
-  opt.save_dir = os.path.join(opt.save_dir, '{}x{}'.format(opt.image_size, opt.image_size))
+  if opt.poisson:
+    dir_name = 'poisson_{}x{}'.format(opt.image_size, opt.image_size)
+  else:
+    dir_name = '{}x{}'.format(opt.image_size, opt.image_size)
+  opt.save_dir = os.path.join(opt.save_dir, opt.geometry, dir_name)
   frame_dir = os.path.join(opt.save_dir, 'frames')
   os.makedirs(frame_dir, exist_ok=True)
 
   # shape: n_runs x batch_size x 4
   boundary_conditions = np.random.rand(opt.n_runs, opt.batch_size, 4) * opt.max_temp
-  np.save(os.path.join(opt.save_dir, 'bc.npy'), boundary_conditions)
+  if opt.poisson:
+    # Lower temperature
+    boundary_conditions *= 0.75
   # Save opt
   np.save(os.path.join(opt.save_dir, 'opt.npy'), opt)
 
@@ -77,8 +88,9 @@ def generate_square(opt):
     x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size) * opt.max_temp
     bc = boundary_conditions[run]
     x = utils.set_boundary(x, bc)
-    if opt.heat_source:
-      f = get_heat_source(opt.image_size - 2, opt.batch_size)
+    original_x = x.copy()[:, np.newaxis, :, :]
+    if opt.poisson:
+      f = get_heat_source(opt.image_size, opt.batch_size) * opt.max_temp
     else:
       f = None
 
@@ -103,14 +115,35 @@ def generate_square(opt):
 
     # Find solution
     frames = get_solution(x, bc, f)
+    frames = np.concatenate([original_x, frames[:, 1:2]], axis=1)
     assert frames.shape[1] == opt.n_frames + 1
+
+    if f is not None:
+      # Concatenate f to frames.
+      f = f.cpu().numpy()[:, np.newaxis, :, :]
+      frames = np.concatenate([frames, f], axis=1)
+      # Check values < 1
+      max_value = frames.reshape((opt.batch_size, 3, opt.image_size ** 2))[:, 1, :]\
+                    .max(axis=1) / opt.max_temp
+      scaling = np.ones(opt.batch_size)
+      scaling[max_value >= 1] = 0.99 / max_value[max_value >= 1]
+      # Scale the ones that has values > 1
+      frames *= scaling[:, np.newaxis, np.newaxis, np.newaxis]
+      boundary_conditions[run] *= scaling[:, np.newaxis]
+
+    assert np.all(frames[:, 1, :, :] <= opt.max_temp + 1e-5)
+
     np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), frames)
     print('Run {} saved.'.format(run))
+
+  # Save boundaries
+  np.save(os.path.join(opt.save_dir, 'bc.npy'), boundary_conditions)
 
 def generate_geometry(opt):
   '''
   Generate data with geometry.
   '''
+  assert opt.poisson == 0 # f = 0 for now
   opt.save_dir = os.path.join(opt.save_dir, opt.geometry,
                               '{}x{}'.format(opt.image_size, opt.image_size))
   frame_dir = os.path.join(opt.save_dir, 'frames')
@@ -141,7 +174,6 @@ def generate_geometry(opt):
 if __name__ == '__main__':
   opt = parser.parse_args()
   if opt.geometry == 'square':
-    assert False
     generate_square(opt)
   else:
     generate_geometry(opt)

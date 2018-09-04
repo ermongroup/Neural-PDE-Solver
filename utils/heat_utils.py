@@ -31,13 +31,14 @@ def is_bc_mask(x, bc):
   If bc is a mask, then it should be (batch_size x 2 x image_size x image_size).
   Otherwise it should be (batch_size x 4).
   '''
-  batch_size, image_size, _ = x.size()
-  if bc.size() == (batch_size, 2, image_size, image_size):
+  _, image_size, _ = x.shape
+  batch_size = bc.shape[0]
+  if bc.shape == (batch_size, 2, image_size, image_size):
     return True
-  elif bc.size() == (batch_size, 4):
+  elif bc.shape == (batch_size, 4):
     return False
   else:
-    print(x.size(), bc.size())
+    print(x.shape, bc.shape)
     raise Exception
 
 def set_boundary(x, bc):
