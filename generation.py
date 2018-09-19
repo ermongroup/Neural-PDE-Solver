@@ -108,8 +108,8 @@ def generate_square(opt):
     if f is None:
       model = MultigridIterator(4, 4, 4)
       for i in range(50):
-        x = model.iter_step(x, bc)
-      error = utils.fd_error(x)
+        x = model.iter_step(x, bc, f)
+      error = utils.fd_error(x, bc, f)
       largest_error = error.max().item()
       print('largest error {}'.format(largest_error))
 
