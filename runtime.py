@@ -4,19 +4,27 @@ import os
 import time
 import torch
 
-import data
 import utils
 from models.heat_model import HeatModel
 
-def runtime(opt, model, data_loader):
+def get_data(dset_path, max_temp):
+  bc = np.load(os.path.join(dset_path, 'bc.npy'))[0] / max_temp
+  frames = np.load(os.path.join(dset_path, 'frames', '0000.npy')) / max_temp
+  bc = torch.Tensor(bc)
+  frames = torch.Tensor(frames)
+  data = {'bc': bc, 'x': frames[:, 0], 'final': frames[:, 1]}
+  return data
+
+def runtime(opt, model, data):
   '''
   Test runtime.
   '''
-  for step, data in enumerate(data_loader):
-    bc, gt, x = data['bc'], data['final'], data['x']
-    bc = bc.cuda()
-    gt = gt.cuda()
-    x = x.cuda()
+  batch_size = data['bc'].size(0)
+  for i in range(batch_size):
+    #bc, gt, x = data['bc'][i], data['final'][i], data['x'][i]
+    bc = data['bc'][i].unsqueeze(0).cuda()
+    gt = data['final'][i].unsqueeze(0).cuda()
+    x = data['x'][i].unsqueeze(0).cuda()
     # Initialize with zeros and calculate starting_error
     x = utils.initialize(x, bc, 'zero')
     starting_error = utils.l2_error(x, gt).cpu()
@@ -55,10 +63,8 @@ def main():
   # For convenience
   opt.iterator = model_opt.iterator
 
-  opt.initialization = 'avg'
-  opt.data_limit = 1
-  opt.batch_size = 1
-  data_loader = data.get_data_loader(opt)
+  # Get data
+  data = get_data(opt.dset_path, opt.max_temp)
 
   epoch = opt.which_epochs[0]
   if epoch < 0:
@@ -71,7 +77,7 @@ def main():
   model.load(opt.ckpt_path, epoch)
   print('Checkpoint loaded from {}, epoch {}'.format(opt.ckpt_path, epoch))
   model.setup(is_train=False)
-  runtime(opt, model, data_loader)
+  runtime(opt, model, data)
 
 if __name__ == '__main__':
   main()
