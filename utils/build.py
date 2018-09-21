@@ -8,7 +8,7 @@ from .logger import *
 from .statistics import Statistics
 
 
-def build(is_train, tb_dir=None):
+def build(is_train, tb_dir=None, logging=True):
   opt, log = args.TrainArgs().parse() if is_train else args.TestArgs().parse()
 
   #os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus
@@ -29,12 +29,15 @@ def build(is_train, tb_dir=None):
   else:
     vis = None
 
-  logger_name = '{}_{}'.format(opt.split, opt.geometry)
-  if opt.poisson:
-    logger_name = logger_name + '_poisson'
-  logger = Logger(opt.ckpt_path, logger_name)
-  stats = Statistics(opt.ckpt_path)
+  if logging:
+    logger_name = '{}_{}'.format(opt.split, opt.geometry)
+    if opt.poisson:
+      logger_name = logger_name + '_poisson'
+    logger = Logger(opt.ckpt_path, logger_name)
+    logger.print(log)
+  else:
+    logger = None
 
-  logger.print(log)
+  stats = Statistics(opt.ckpt_path)
 
   return opt, logger, stats, vis
