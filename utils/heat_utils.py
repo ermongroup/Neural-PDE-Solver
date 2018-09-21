@@ -155,7 +155,7 @@ def fd_iter(x, bc, error_threshold, max_iters=100000):
       break
   return x
 
-def calculate_errors(x, bc, f, gt, iter_func, n_steps, starting_error):
+def calculate_errors(x, bc, f, gt, iter_func, n_steps, starting_error, threshold=0.002):
   '''
   Run iterations and calculate errors, relative to starting_error.
   '''
@@ -165,7 +165,7 @@ def calculate_errors(x, bc, f, gt, iter_func, n_steps, starting_error):
   for i in range(n_steps):
     x = iter_func(x, bc, f).detach()
     e = l2_error(x, gt).cpu() / starting_error # Normalize by starting_error
-    if (e < 0.002).all().item():
+    if (e < threshold).all().item():
       # Pad with zeros when error is close to 0
       zeros = torch.zeros(batch_size, n_steps - i)
       errors.append(zeros)

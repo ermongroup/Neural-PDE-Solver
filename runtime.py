@@ -17,14 +17,19 @@ def runtime(opt, model, data_loader):
     bc = bc.cuda()
     gt = gt.cuda()
     x = x.cuda()
+    # Initialize with zeros and calculate starting_error
+    x = utils.initialize(x, bc, 'zero')
     starting_error = utils.l2_error(x, gt).cpu()
 
+    # Initialize
+    x = utils.initialize(x, bc, opt.initialization)
     # Get the errors first
+    threshold = 0.001
     errors, _ = utils.calculate_errors(x, bc, None, gt, model.iter_step,
-                                       opt.n_evaluation_steps, starting_error)
+                                       opt.n_evaluation_steps, starting_error,
+                                       threshold)
     errors = errors[0].cpu().numpy()
 
-    threshold = 0.1
     steps = np.nonzero(errors < threshold)[0][0]
     print('Steps:', steps)
 
