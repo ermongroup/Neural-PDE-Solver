@@ -97,16 +97,15 @@ def get_data(dset_path, max_temp):
 def l2_error(x, gt):
   return ((x - gt) ** 2).mean()
 
-def runtime(data):
+def runtime(data, n_mesh):
   '''
   Calculate runtime.
   '''
-  n_mesh = 1024
   n_evaluation_steps = 200
   threshold = 0.001
   # Parameters
   para_solver = 'gmres'  # specify solver: gmres, cg, bicgstab
-  para_precon = 'default'  # specify preconditioner
+  para_precon = 'amg'  # specify preconditioner
 
   batch_size = data['bc'].shape[0]
   for i in range(batch_size):
@@ -118,24 +117,28 @@ def runtime(data):
     starting_error = l2_error(x, gt)
 
     mesh, u, solver = setup_solver(bc, n_mesh)
-    for n_iter in range(100, n_evaluation_steps, 10):
+#    for n_iter in range(190, n_evaluation_steps, 10):
+    for n_iter in range(200, 201):
       x, t = run_fenics(mesh, u, solver, n_iter, para_solver, para_precon)
       x = x.reshape((n_mesh + 1, n_mesh + 1))
-      e = l2_error(x, gt) / starting_error
+      e = l2_error(x, gt)
       print('error:', e)
+      print('ratio:', e / starting_error)
       print('Time:', t)
-      if e < threshold:
-        print(t)
-        exit(0)
+#      if e < threshold:
+#        print(t)
+#        exit(0)
 
 def main():
-  dset_path = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/square/1025x1025')
+  n_mesh = 1024
+  size_str = '{}x{}'.format(n_mesh + 1, n_mesh + 1)
+  dset_path = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/square', size_str)
   data = get_data(dset_path, 100)
 
   list_linear_solver_methods()
   list_krylov_solver_preconditioners()
 
-  runtime(data)
+  runtime(data, n_mesh)
 
 if __name__ == '__main__':
   main()
