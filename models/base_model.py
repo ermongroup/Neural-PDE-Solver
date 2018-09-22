@@ -20,7 +20,11 @@ class BaseModel:
       if not os.path.exists(path):
         print('{} does not exist, ignore.'.format(path))
         continue
-      ckpt = torch.load(path)
+      if torch.cuda.is_available():
+        ckpt = torch.load(path)
+      else:
+        ckpt = torch.load(path, map_location=lambda storage, loc: storage)
+
       if isinstance(net, torch.nn.DataParallel):
         module = net.module
       else:

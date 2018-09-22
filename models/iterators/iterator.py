@@ -9,8 +9,8 @@ class Iterator(nn.Module):
     self.act = act
     self.n_operations = None
     # Finite difference kernels
-    self.fd_update_kernel = utils.update_kernel.view(1, 1, 3, 3).cuda()
-    self.fd_loss_kernel = utils.loss_kernel.view(1, 1, 3, 3).cuda()
+    self.fd_update_kernel = utils.update_kernel.view(1, 1, 3, 3)
+    self.fd_loss_kernel = utils.loss_kernel.view(1, 1, 3, 3)
 
     self.is_bc_mask = False
 

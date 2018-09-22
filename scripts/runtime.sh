@@ -1,5 +1,5 @@
 #!/bin/bash
-CUDA_VISIBLE_DEVICES=0 \
+CUDA_VISIBLE_DEVICES='' \
 python runtime.py \
   --batch_size 1 \
   --n_evaluation_steps 800 \

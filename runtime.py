@@ -22,9 +22,13 @@ def runtime(opt, model, data):
   batch_size = data['bc'].size(0)
   for i in range(batch_size):
     #bc, gt, x = data['bc'][i], data['final'][i], data['x'][i]
-    bc = data['bc'][i].unsqueeze(0).cuda()
-    gt = data['final'][i].unsqueeze(0).cuda()
-    x = data['x'][i].unsqueeze(0).cuda()
+    bc = data['bc'][i].unsqueeze(0)
+    gt = data['final'][i].unsqueeze(0)
+    x = data['x'][i].unsqueeze(0)
+    if torch.cuda.is_available():
+      bc = bc.cuda()
+      gt = gt.cuda()
+      x = x.cuda()
     # Initialize with zeros and calculate starting_error
     x = utils.initialize(x, bc, 'zero')
     starting_error = utils.l2_error(x, gt).cpu()

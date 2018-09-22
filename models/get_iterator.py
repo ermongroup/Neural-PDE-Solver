@@ -4,22 +4,25 @@ def get_iterator(opt):
   is_train = opt.is_train
 
   if opt.iterator == 'jacobi':
-    iterator = JacobiIterator().cuda()
+    iterator = JacobiIterator()
     is_train = False
   elif opt.iterator == 'multigrid':
     iterator = MultigridIterator(opt.mg_n_layers, opt.mg_pre_smoothing,
-                                 opt.mg_post_smoothing).cuda()
+                                 opt.mg_post_smoothing)
     is_train = False
   elif opt.iterator == 'cg':
     iterator = ConjugateGradient(opt.cg_n_iters)
     is_train = False
   elif opt.iterator == 'conv':
-    iterator = ConvIterator(opt.activation, opt.conv_n_layers).cuda()
+    iterator = ConvIterator(opt.activation, opt.conv_n_layers)
   elif opt.iterator == 'unet':
     iterator = UNetIterator(opt.activation, opt.mg_n_layers,
-                            opt.mg_pre_smoothing, opt.mg_post_smoothing).cuda()
+                            opt.mg_pre_smoothing, opt.mg_post_smoothing)
   else:
     raise NotImplementedError
+
+  if torch.cuda.is_available():
+    iterator = iterator.cuda()
 
   # Compare to Jacobi methods
   if opt.iterator == 'conv' or opt.iterator == 'multigrid':
