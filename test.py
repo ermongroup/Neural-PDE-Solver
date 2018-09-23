@@ -15,6 +15,7 @@ def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
     logger.print('Comparison: {} ({}), {} ({})'.format(\
                      model.iterator.name(), model.iterator.n_operations,
                      model.compare_model.name(), model.compare_model.n_operations))
+  logger.print('Initialization: {}'.format(opt.initialization))
 
   metric = utils.Metrics(scale=model.operations_ratio, error_threshold=error_threshold)
   images = {'error_curves': [], 'results': []}
@@ -58,12 +59,12 @@ def check_eigenvalues(opt, model, logger, vis):
   w, v = utils.calculate_eigenvalues(model, image_size)
   np.save(os.path.join(opt.ckpt_path, 'eigenvalues.npy'), w)
   np.save(os.path.join(opt.ckpt_path, 'eigenvectors.npy'), v)
-  logger.print('Absolute eigenvalues:\n{}\n'.format(sorted(np.abs(w))))
+  logger.print('Absolute eigenvalues:\n{}\n'.format(sorted(np.abs(w))[-5:]))
   w = sorted(np.abs(w))
 
   # Eigenvalues of H
   w, v = utils.calculate_eigenvalues_wraparound(model, image_size)
-  logger.print('H eigenvalues:\n{}\n'.format(sorted(np.abs(w))))
+  logger.print('H eigenvalues:\n{}\n'.format(sorted(np.abs(w))[-5:]))
 
   # Finite difference
   if model.compare_model is not None:
@@ -74,7 +75,7 @@ def check_eigenvalues(opt, model, logger, vis):
     model.compare_model.is_bc_mask = is_bc_mask
     w_fd, v_fd = np.linalg.eig(B)
     w_fd = sorted(np.abs(w_fd))
-    print('Finite difference eigenvalues:\n{}\n'.format(w_fd))
+    print('Finite difference eigenvalues:\n{}\n'.format(w_fd[-5:]))
     if vis is not None:
       img = utils.plot_curves([{'y': w_fd, 'label': 'Jacobi eigenvalues'},
                                {'y': w, 'label': 'model eigenvalues'}],

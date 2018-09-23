@@ -319,8 +319,8 @@ def calculate_eigenvalues_wraparound(model, image_size):
   ET = E.dot(T)
   EH = E.dot(H)
   A = EH.dot(ET) + ET - EH
-  w, v = np.linalg.eig(A.T.dot(A))
-#  w, v = np.linalg.eig(A)
+#  w, v = np.linalg.eig(A.T.dot(A))
+  w, v = np.linalg.eig(A)
   # Change back to original setting
   model.change_activation(activation)
   return w, v
