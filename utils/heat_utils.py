@@ -298,7 +298,7 @@ def construct_matrix_wraparound(image_size, iter_func):
   A = torch.stack(columns, dim=1)
   length = image_size ** 2
   assert A.size(0) == length
-  return A
+  return A.cpu().numpy()
 
 def calculate_eigenvalues_wraparound(model, image_size):
   '''
@@ -308,8 +308,19 @@ def calculate_eigenvalues_wraparound(model, image_size):
   # Remove activation and bc_mask
   activation = model.get_activation()
   model.change_activation('none')
-  A = construct_matrix_wraparound(image_size, model.H)
-  w, v = np.linalg.eig(A)
+
+  E = np.zeros((image_size, image_size))
+  E[3:-3, 3:-3] = 1
+#  E = np.diag(E.flatten())
+  E = np.eye(image_size * image_size)
+
+  T = construct_matrix_wraparound(image_size, fd_step)
+  H = construct_matrix_wraparound(image_size, model.H)
+  ET = E.dot(T)
+  EH = E.dot(H)
+  A = EH.dot(ET) + ET - EH
+  w, v = np.linalg.eig(A.T.dot(A))
+#  w, v = np.linalg.eig(A)
   # Change back to original setting
   model.change_activation(activation)
   return w, v
