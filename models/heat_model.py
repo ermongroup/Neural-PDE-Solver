@@ -78,6 +78,10 @@ class HeatModel(BaseModel):
     ''' Perform one iteration step. '''
     return self.iterator.iter_step(x, bc, f)
 
+  def H(self, x, bc):
+    ''' Perform one iteration of H. '''
+    return self.iterator.H(x, bc)
+
   def get_activation(self):
     return self.iterator.act
 

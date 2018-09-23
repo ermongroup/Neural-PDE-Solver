@@ -38,10 +38,12 @@ def setup_solver(bc_vec, n_mesh):
   # Initialize mesh function for boundary domains
   boundaries = MeshFunction('size_t', mesh, mesh.topology().dim()-1)
   boundaries.set_all(0)
-  left.mark(boundaries, 1)
+
+  # Note: Ordering is important!!
+  bottom.mark(boundaries, 1)
   top.mark(boundaries, 2)
-  right.mark(boundaries, 3)
-  bottom.mark(boundaries, 4)
+  left.mark(boundaries, 3)
+  right.mark(boundaries, 4)
 
   V = FunctionSpace(mesh, 'P', 1)
 
@@ -94,8 +96,8 @@ def get_data(dset_path, max_temp):
   data = {'bc': bc, 'x': frames[:, 0], 'final': frames[:, 1]}
   return data
 
-def l2_error(x, gt):
-  return ((x - gt) ** 2).mean()
+def rms(x, gt):
+  return np.sqrt(((x - gt) ** 2).mean())
 
 def runtime(data, n_mesh):
   '''
@@ -107,27 +109,36 @@ def runtime(data, n_mesh):
   para_solver = 'gmres'  # specify solver: gmres, cg, bicgstab
   para_precon = 'amg'  # specify preconditioner
 
-  batch_size = data['bc'].shape[0]
+#  batch_size = data['bc'].shape[0]
+  batch_size = 4
+  xs = []
+  gts = []
   for i in range(batch_size):
     bc = data['bc'][i]
     gt = data['final'][i]
     x = data['x'][i]
     # Initialize with 0
     x[1:-1, 1:-1] = 0
-    starting_error = l2_error(x, gt)
+    starting_error = rms(x, gt)
 
     mesh, u, solver = setup_solver(bc, n_mesh)
 #    for n_iter in range(190, n_evaluation_steps, 10):
-    for n_iter in range(200, 201):
+    for n_iter in range(800, 801):
       x, t = run_fenics(mesh, u, solver, n_iter, para_solver, para_precon)
       x = x.reshape((n_mesh + 1, n_mesh + 1))
-      e = l2_error(x, gt)
+      e = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
       print('error:', e)
       print('ratio:', e / starting_error)
       print('Time:', t)
+    xs.append(x)
+    gts.append(gt)
 #      if e < threshold:
 #        print(t)
 #        exit(0)
+  xs = np.array(xs)
+  gts = np.array(gts)
+  np.save('tmp/x', xs)
+  np.save('tmp/gt', gts)
 
 def main():
   n_mesh = 1024

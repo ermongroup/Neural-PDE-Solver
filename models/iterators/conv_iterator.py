@@ -16,6 +16,20 @@ class ConvIterator(Iterator):
     self.n_layers = n_layers
     self.n_operations = 1 + n_layers
 
+  def H(self, r, bc):
+    '''
+    Return H(r).
+    '''
+    if self.is_bc_mask:
+      mask = 1 - bc[:, 1:, 1:-1, 1:-1] # foreground mask
+      r = r * mask
+
+    for i in range(self.n_layers):
+      r = self.layers[i](r)
+      if self.is_bc_mask:
+        r = r * mask
+    return r
+
   def forward(self, x, bc, f):
     '''
     x: size (batch_size x image_size x image_size)
@@ -25,18 +39,11 @@ class ConvIterator(Iterator):
     y = F.conv2d(x, self.fd_update_kernel, padding=0)
     if f is not None:
       y = y - f.unsqueeze(1)[:, :, 1:-1, 1:-1]
+
     r = y - x[:, :, 1:-1, 1:-1]
+    r = self.H(r)
 
-    if self.is_bc_mask:
-      mask = 1 - bc[:, 1:, 1:-1, 1:-1] # foreground mask
-      r = r * mask
-
-    for i in range(self.n_layers):
-      r = self.layers[i](r)
-      if self.is_bc_mask:
-        r = r * mask
-
-    y = y + r # residual
+    y = y + r
 
     y = self.activation(y)
     # Set boundary

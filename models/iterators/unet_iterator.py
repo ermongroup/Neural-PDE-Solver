@@ -33,17 +33,10 @@ class UNetIterator(Iterator):
         second_layers.append(nn.Conv2d(1, 1, 3, stride=1, padding=1, bias=False))
     self.second_layers = nn.ModuleList(second_layers)
 
-  def forward(self, x, bc, f):
+  def H(self, r, bc):
     '''
-    x: size (batch_size x image_size x image_size)
-    return: same size
+    Return H(r).
     '''
-    x = x.unsqueeze(1)
-    y = F.conv2d(x, self.fd_update_kernel)
-    if f is not None:
-      y = y - f[..., 1:-1, 1:-1]
-    r = y - x[:, :, 1:-1, 1:-1]
-
     # Get masks first
     if self.is_bc_mask:
       bc_mask = bc[:, 1:, :, :]
@@ -88,6 +81,21 @@ class UNetIterator(Iterator):
         r = r[:, :, 1:-1, 1:-1]
         if self.is_bc_mask:
           r = r * masks[self.n_layers - i - 2]
+
+    return r
+
+  def forward(self, x, bc, f):
+    '''
+    x: size (batch_size x image_size x image_size)
+    return: same size
+    '''
+    x = x.unsqueeze(1)
+    y = F.conv2d(x, self.fd_update_kernel)
+    if f is not None:
+      y = y - f[..., 1:-1, 1:-1]
+
+    r = y - x[:, :, 1:-1, 1:-1]
+    r = self.H(r)
 
     y = y + r
     y = self.activation(y)
