@@ -95,7 +95,7 @@ class UNetIterator(Iterator):
       y = y - f[..., 1:-1, 1:-1]
 
     r = y - x[:, :, 1:-1, 1:-1]
-    r = self.H(r)
+    r = self.H(r, bc)
 
     y = y + r
     y = self.activation(y)

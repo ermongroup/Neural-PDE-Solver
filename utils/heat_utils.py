@@ -265,6 +265,55 @@ def calculate_eigenvalues(model, image_size=16):
   model.iterator.is_bc_mask = is_bc_mask
   return w, v
 
+def construct_matrix_wraparound(image_size, iter_func):
+  '''
+  Similar to construct_matrix, but with wraparound.
+  No boundaries, return a single matrix.
+  '''
+  bc = torch.zeros(1, 4)
+  x = torch.zeros(1, image_size * 3, image_size * 3)
+  if torch.cuda.is_available():
+    x = x.cuda()
+    bc = bc.cuda()
+
+  # columns
+  columns = []
+  for i in range(image_size):
+    for j in range(image_size):
+      y = x.clone()
+      y[0, i + image_size, j + image_size] = 1
+
+#      print('######################################')
+#      np.set_printoptions(threshold=np.nan)
+      y = iter_func(y, bc, None).detach()
+      z = y.view(1, 3, image_size, 3, image_size)
+      z = z.sum(dim=3).sum(dim=1)
+
+#      print(z[0].cpu().numpy())
+#      print('######################################')
+
+      c = z.cpu().view(-1)
+      assert c.shape == (image_size * image_size,)
+      columns.append(c)
+  A = torch.stack(columns, dim=1)
+  length = image_size ** 2
+  assert A.size(0) == length
+  return A
+
+def calculate_eigenvalues_wraparound(model, image_size):
+  '''
+  Similar to calculate_eigenvalues, but with wraparound.
+  Return eigenvalues w and eigenvectors v.
+  '''
+  # Remove activation and bc_mask
+  activation = model.get_activation()
+  model.change_activation('none')
+  A = construct_matrix_wraparound(image_size, model.H)
+  w, v = np.linalg.eig(A)
+  # Change back to original setting
+  model.change_activation(activation)
+  return w, v
+
 def restriction(x, bc):
   '''
   Weighted restriction using restriction_kernel.

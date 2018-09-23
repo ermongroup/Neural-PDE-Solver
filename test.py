@@ -61,6 +61,10 @@ def check_eigenvalues(opt, model, logger, vis):
   logger.print('Absolute eigenvalues:\n{}\n'.format(sorted(np.abs(w))))
   w = sorted(np.abs(w))
 
+  # Eigenvalues of H
+  w, v = utils.calculate_eigenvalues_wraparound(model, image_size)
+  logger.print('H eigenvalues:\n{}\n'.format(sorted(np.abs(w))))
+
   # Finite difference
   if model.compare_model is not None:
     # Change is_bc_mask to False
@@ -83,20 +87,21 @@ def test(opt, model, data_loader, logger, vis=None):
   '''
   model.setup(is_train=False)
 
-  check_eigenvalues(opt, model, logger, vis)
-
-  # Print model parameters
-  state_dict = model.iterator.state_dict()
-  for key in state_dict.keys():
-    logger.print('{}\n{}'.format(key, state_dict[key]))
-
   if opt.geometry == 'square':
+    check_eigenvalues(opt, model, logger, vis)
+
+    # Print model parameters
+    state_dict = model.iterator.state_dict()
+    for key in state_dict.keys():
+      logger.print('{}\n{}'.format(key, state_dict[key]))
+
     # random initialization
     results, images = evaluate(opt, model, data_loader, logger)
     if vis is not None:
       for i, img in enumerate(images['error_curves']):
         vis.add_image({'errors_{}_init'.format(opt.initialization): img}, i)
 
+  # Test for all geometries.
   # avg initialization
   opt.initialization = 'avg'
   results, images = evaluate(opt, model, data_loader, logger)
