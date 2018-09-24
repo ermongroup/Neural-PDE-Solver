@@ -75,8 +75,8 @@ def run_fenics(mesh, u, solver, n_iter, para_solver, para_precon):
   solver.parameters['krylov_solver']['error_on_nonconvergence'] = False
   solver.parameters['krylov_solver']['maximum_iterations'] = n_iter
   solver.parameters['krylov_solver']['report'] = True
-  solver.parameters['krylov_solver']['relative_tolerance'] = 0.001
-  solver.parameters['krylov_solver']['absolute_tolerance'] = 0.001
+  solver.parameters['krylov_solver']['relative_tolerance'] = 0.00001
+  solver.parameters['krylov_solver']['absolute_tolerance'] = 0.00001
 
   solver.parameters['linear_solver'] = para_solver
   solver.parameters['preconditioner'] = para_precon
@@ -112,7 +112,7 @@ def runtime(data, n_mesh):
   threshold = 0.05
   # Parameters
   para_solver = 'gmres'  # specify solver: gmres, cg, bicgstab
-  para_precon = 'default'  # specify preconditioner
+  para_precon = 'amg'  # specify preconditioner
 
 #  batch_size = data['bc'].shape[0]
   batch_size = 4
@@ -127,15 +127,16 @@ def runtime(data, n_mesh):
     mesh, u, solver = setup_solver(bc, n_mesh)
 
     # Get ground truth
-    gt, _ = run_fenics(mesh, u, solver, 1000, para_solver, para_precon)
-    starting_error = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
-    print('Starting error:', starting_error)
+    gt, _ = run_fenics(mesh, u, solver, 1000, para_solver, 'amg')
 
-    for n_iter in range(50, 200, 10):
+    starting_error = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
+    print('###################################################################')
+    print('Starting error:', starting_error)
+    for n_iter in range(1, 20, 1):
       x, t = run_fenics(mesh, u, solver, n_iter, para_solver, para_precon)
-      e = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
+      e = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1]) / starting_error
       print('Iters:', n_iter)
-      print('Error ratio:', e / starting_error)
+      print('Error ratio:', e)
       print('Time:', t)
       print('')
       if e < threshold:

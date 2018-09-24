@@ -36,11 +36,12 @@ def runtime(opt, model, data):
     # Initialize
     x = utils.initialize(x, bc, opt.initialization)
     # Get the errors first
-    threshold = 0.001
-    errors, _ = utils.calculate_errors(x, bc, None, gt, model.iter_step,
+    threshold = 0.05
+    errors, y = utils.calculate_errors(x, bc, None, gt, model.iter_step,
                                        opt.n_evaluation_steps, starting_error,
                                        threshold)
     errors = errors[0].cpu().numpy()
+    print(utils.l2_error(y, gt))
 
     steps = np.nonzero(errors < threshold)[0][0]
     print('Steps:', steps)
