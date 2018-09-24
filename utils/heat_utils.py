@@ -283,14 +283,9 @@ def construct_matrix_wraparound(image_size, iter_func):
       y = x.clone()
       y[0, i + image_size, j + image_size] = 1
 
-#      print('######################################')
-#      np.set_printoptions(threshold=np.nan)
       y = iter_func(y, bc, None).detach()
       z = y.view(1, 3, image_size, 3, image_size)
       z = z.sum(dim=3).sum(dim=1)
-
-#      print(z[0].cpu().numpy())
-#      print('######################################')
 
       c = z.cpu().view(-1)
       assert c.shape == (image_size * image_size,)

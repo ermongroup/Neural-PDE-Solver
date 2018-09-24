@@ -103,3 +103,11 @@ def dot_product(x, y):
   x = x.view(x.size(0), -1)
   y = y.view(y.size(0), -1)
   return torch.sum(x * y, dim=1)
+
+def spectral_radius(A):
+  '''
+  Spectral radius: largest absolute eigenvalue.
+  '''
+  w, v = np.linalg.eig(A)
+  w = sorted(np.abs(w))
+  return w[-1]

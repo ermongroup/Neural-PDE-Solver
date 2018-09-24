@@ -16,7 +16,7 @@ class BaseArgs:
                              choices=['square', 'cylinders', 'Lshape'])
     self.parser.add_argument('--poisson', type=int, default=0)
     self.parser.add_argument('--batch_size', type=int, default=4)
-    self.parser.add_argument('--image_size', type=int, default=64)
+    self.parser.add_argument('--image_size', type=int, default=65)
     # Specific
     self.parser.add_argument('--max_temp', type=int, default=100)
     self.parser.add_argument('--initialization', type=str, default='random',
