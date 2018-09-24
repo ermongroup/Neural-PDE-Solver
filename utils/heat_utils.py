@@ -78,6 +78,9 @@ def initialize(x, bc, initialization):
     if initialization == 'random':
       x = torch.rand_like(x)
       x = set_boundary(x, bc)
+    elif initialization == 'zero':
+      x = torch.zeros_like(x)
+      x = set_boundary(x, bc)
   else:
     # Initialize inner part
     if initialization == 'zero':
@@ -130,13 +133,13 @@ def fd_error(x, bc, f, aggregate='max'):
 
 def l2_error(x, gt):
   '''
-  Calculate L2 error.
+  Calculate L2 error (rms error).
   x, gt: (H x W) or (batch_size x H x W)
   return a scalar loss.
   '''
   diff = (x - gt) ** 2
   error = diff.mean(dim=-1).mean(dim=-1)
-  return error
+  return torch.sqrt(error)
 
 def fd_iter(x, bc, error_threshold, max_iters=100000):
   '''

@@ -100,7 +100,10 @@ class HeatModel(BaseModel):
     gt = gt.cuda()
     if f is not None:
       f = f.cuda()
-    starting_error = utils.l2_error(x, gt).cpu()
+    # Calculate starting error
+    y = x.clone()
+    y = utils.initialize(y, bc, 'zero')
+    starting_error = utils.l2_error(y, gt).cpu()
     results = {}
 
     if self.compare_model is not None:

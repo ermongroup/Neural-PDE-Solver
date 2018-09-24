@@ -16,8 +16,9 @@ def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
                      model.iterator.name(), model.iterator.n_operations,
                      model.compare_model.name(), model.compare_model.n_operations))
   logger.print('Initialization: {}'.format(opt.initialization))
+  logger.print('Error threshold: {}'.format(error_threshold))
 
-  metric = utils.Metrics(scale=model.operations_ratio, error_threshold=error_threshold)
+  metric = utils.Metrics(scale=1, error_threshold=error_threshold)
   images = {'error_curves': [], 'results': []}
 
   for step, data in enumerate(data_loader):
@@ -97,10 +98,10 @@ def test(opt, model, data_loader, logger, vis=None):
       logger.print('{}\n{}'.format(key, state_dict[key]))
 
     # random initialization
-    results, images = evaluate(opt, model, data_loader, logger)
-    if vis is not None:
-      for i, img in enumerate(images['error_curves']):
-        vis.add_image({'errors_{}_init'.format(opt.initialization): img}, i)
+#    results, images = evaluate(opt, model, data_loader, logger)
+#    if vis is not None:
+#      for i, img in enumerate(images['error_curves']):
+#        vis.add_image({'errors_{}_init'.format(opt.initialization): img}, i)
 
   # Test for all geometries.
   # avg initialization
