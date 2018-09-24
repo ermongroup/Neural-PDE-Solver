@@ -75,6 +75,9 @@ def run_fenics(mesh, u, solver, n_iter, para_solver, para_precon):
   solver.parameters['krylov_solver']['error_on_nonconvergence'] = False
   solver.parameters['krylov_solver']['maximum_iterations'] = n_iter
   solver.parameters['krylov_solver']['report'] = True
+  solver.parameters['krylov_solver']['relative_tolerance'] = 0.001
+  solver.parameters['krylov_solver']['absolute_tolerance'] = 0.001
+
   solver.parameters['linear_solver'] = para_solver
   solver.parameters['preconditioner'] = para_precon
 
@@ -85,6 +88,8 @@ def run_fenics(mesh, u, solver, n_iter, para_solver, para_precon):
   t = end - start
 
   x = u.compute_vertex_values(mesh)
+  size = np.sqrt(len(x)).astype(int)
+  x = x.reshape((size, size))
   return x, t
 
 def get_data(dset_path, max_temp):
@@ -104,41 +109,37 @@ def runtime(data, n_mesh):
   Calculate runtime.
   '''
   n_evaluation_steps = 200
-  threshold = 0.001
+  threshold = 0.05
   # Parameters
   para_solver = 'gmres'  # specify solver: gmres, cg, bicgstab
-  para_precon = 'amg'  # specify preconditioner
+  para_precon = 'default'  # specify preconditioner
 
 #  batch_size = data['bc'].shape[0]
   batch_size = 4
-  xs = []
-  gts = []
   for i in range(batch_size):
     bc = data['bc'][i]
     gt = data['final'][i]
     x = data['x'][i]
     # Initialize with 0
     x[1:-1, 1:-1] = 0
-    starting_error = rms(x, gt)
 
+    # Set up
     mesh, u, solver = setup_solver(bc, n_mesh)
-#    for n_iter in range(190, n_evaluation_steps, 10):
-    for n_iter in range(800, 801):
+
+    # Get ground truth
+    gt, _ = run_fenics(mesh, u, solver, 1000, para_solver, para_precon)
+    starting_error = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
+    print('Starting error:', starting_error)
+
+    for n_iter in range(50, 200, 10):
       x, t = run_fenics(mesh, u, solver, n_iter, para_solver, para_precon)
-      x = x.reshape((n_mesh + 1, n_mesh + 1))
       e = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
-      print('error:', e)
-      print('ratio:', e / starting_error)
+      print('Iters:', n_iter)
+      print('Error ratio:', e / starting_error)
       print('Time:', t)
-    xs.append(x)
-    gts.append(gt)
-#      if e < threshold:
-#        print(t)
-#        exit(0)
-  xs = np.array(xs)
-  gts = np.array(gts)
-  np.save('tmp/x', xs)
-  np.save('tmp/gt', gts)
+      print('')
+      if e < threshold:
+        break
 
 def main():
   n_mesh = 1024
@@ -148,6 +149,7 @@ def main():
 
   list_linear_solver_methods()
   list_krylov_solver_preconditioners()
+  print('')
 
   runtime(data, n_mesh)
 
