@@ -49,7 +49,7 @@ def runtime(opt, model, data):
     # Initialize
     x = utils.initialize(x, bc, opt.initialization)
     # Get the errors first
-    threshold = 0.05
+    threshold = 0.01
     errors, _ = utils.calculate_errors(x, bc, None, gt, model.iter_step,
                                        opt.n_evaluation_steps, starting_error,
                                        threshold)

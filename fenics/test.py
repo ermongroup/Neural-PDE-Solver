@@ -144,11 +144,12 @@ def runtime(data, n_mesh, threshold, para_solver, para_precon):
 
     starting_error = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
     print('\n###################################################################')
+    print(i)
     print('Starting error:', starting_error)
     for n_iter in n_iters:
       x, t = run_fenics(bc, mesh, boundaries, n_iter, para_solver, para_precon)
       e = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1]) / starting_error
-      print('Iters: {}, error: {:.3f}, time: {:.3f}'.format(n_iter, e, t))
+      print('Iters: {}, error: {:.4f}, time: {:.3f}'.format(n_iter, e, t))
       print('')
       if e < threshold:
         times.append(t)
@@ -166,13 +167,13 @@ def main():
   print('')
 
   # Parameters
-  threshold = 0.05
+  threshold = 0.01
   para_solver = 'gmres'  # specify solver: gmres, cg, bicgstab
   para_precon = 'default'  # specify preconditioner
 
   times = runtime(data, n_mesh, threshold, para_solver, para_precon)
-  print(times)
-  print(len(times))
+  print('Threshold: {}'.format(threshold))
+  print('{} examples, {:.3f} sec'.format(len(times), sum(times)))
 
 if __name__ == '__main__':
   main()
