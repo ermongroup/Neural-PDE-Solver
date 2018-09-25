@@ -56,7 +56,12 @@ def check_eigenvalues(opt, model, logger, vis):
   if opt.iterator == 'cg':
     return
 
-  image_size = 15
+  if opt.iterator == 'conv':
+    image_size = 15
+  elif opt.iterator == 'unet':
+    return # Too big
+  else:
+    raise NotImplementedError
   w, v = utils.calculate_eigenvalues(model, image_size)
   np.save(os.path.join(opt.ckpt_path, 'eigenvalues.npy'), w)
   np.save(os.path.join(opt.ckpt_path, 'eigenvectors.npy'), v)

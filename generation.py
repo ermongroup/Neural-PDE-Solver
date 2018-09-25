@@ -162,6 +162,18 @@ def generate_geometry(opt):
       x = x.cuda()
       bc = bc.cuda()
 
+    # Use Multigrid model to initialize
+    # TODO: Multigrid does not support Au = f yet.
+    if f is None:
+      model = MultigridIterator(4, 8, 8)
+      if opt.geometry != 'square':
+        model.is_bc_mask = True
+      for i in range(50):
+        x = model.iter_step(x, bc, f)
+      error = utils.fd_error(x, bc, f)
+      largest_error = error.max().item()
+      print('largest error {}'.format(largest_error))
+
     # Find solution
     frames = get_solution(x, bc, f)
     assert frames.shape[1] == 2
