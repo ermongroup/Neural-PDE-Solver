@@ -76,7 +76,8 @@ class BaseArgs:
       if opt.iterator == 'conv':
         iterator_name = '{}{}'.format(opt.iterator, opt.conv_n_layers)
       elif opt.iterator == 'multigrid' or opt.iterator == 'unet':
-        iterator_name = '{}{}'.format(opt.iterator, opt.mg_n_layers)
+        iterator_name = '{}{}{}{}'.format(opt.iterator, opt.mg_n_layers,
+                                          opt.mg_pre_smoothing, opt.mg_post_smoothing)
       else:
         iterator_name = opt.iterator
       opt.ckpt_name = '{}{}_{}_iter{}_{}_gt{}_{}{:.0e}'.format(\

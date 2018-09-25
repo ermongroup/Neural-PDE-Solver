@@ -31,8 +31,8 @@ def get_solution(x, bc, f):
   '''
   frames = [x]
 
-  error_threshold = 0.001
-  max_iters = 20000
+  error_threshold = 0.0001
+  max_iters = 8000
   # Iterate with Jacobi until ground truth
   for i in range(max_iters):
     x = utils.fd_step(x, bc, f)
