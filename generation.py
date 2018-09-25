@@ -106,8 +106,8 @@ def generate_square(opt):
     # Use Multigrid model to initialize
     # TODO: Multigrid does not support Au = f yet.
     if f is None:
-      model = MultigridIterator(4, 4, 4)
-      for i in range(50):
+      model = MultigridIterator(6, 8, 8) # Square geometry: use deeper multigrid
+      for i in range(200):
         x = model.iter_step(x, bc, f)
       error = utils.fd_error(x, bc, f)
       largest_error = error.max().item()
@@ -168,7 +168,7 @@ def generate_geometry(opt):
       model = MultigridIterator(4, 8, 8)
       if opt.geometry != 'square':
         model.is_bc_mask = True
-      for i in range(50):
+      for i in range(200):
         x = model.iter_step(x, bc, f)
       error = utils.fd_error(x, bc, f)
       largest_error = error.max().item()

@@ -37,7 +37,7 @@ def main():
     if opt.evaluate_every > 0 and (epoch + 1) % opt.evaluate_every == 0:
       model.setup(is_train=False)
       # Find eigenvalues
-      if opt.iterator != 'cg':
+      if opt.iterator != 'cg' and opt.iterator != 'unet':
         w, _ = utils.calculate_eigenvalues(model, image_size=67)
         w = sorted(np.abs(w))
         eigenvalues = {'first': w[-2], 'second': w[-3], 'third': w[-4]}

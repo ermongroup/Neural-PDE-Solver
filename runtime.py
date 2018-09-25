@@ -8,8 +8,20 @@ import utils
 from models.heat_model import HeatModel
 
 def get_data(dset_path, max_temp):
-  bc = np.load(os.path.join(dset_path, 'bc.npy'))[0] / max_temp
-  frames = np.load(os.path.join(dset_path, 'frames', '0000.npy')) / max_temp
+  '''
+  Get data.
+  '''
+  num = 50
+  n = num // 16 + 1
+  bc = np.load(os.path.join(dset_path, 'bc.npy'))[:n] / max_temp
+  bc = bc.reshape((-1, 4))[:num]
+
+  all_frames = []
+  for i in range(n):
+    frames = np.load(os.path.join(dset_path, 'frames', '{:04d}.npy'.format(i))) / max_temp
+    all_frames.append(frames)
+  frames = np.concatenate(all_frames, axis=0)[:num]
+
   bc = torch.Tensor(bc)
   frames = torch.Tensor(frames)
   data = {'bc': bc, 'x': frames[:, 0], 'final': frames[:, 1]}
@@ -20,6 +32,7 @@ def runtime(opt, model, data):
   Test runtime.
   '''
   batch_size = data['bc'].size(0)
+  times = []
   for i in range(batch_size):
     #bc, gt, x = data['bc'][i], data['final'][i], data['x'][i]
     bc = data['bc'][i].unsqueeze(0)
@@ -37,12 +50,10 @@ def runtime(opt, model, data):
     x = utils.initialize(x, bc, opt.initialization)
     # Get the errors first
     threshold = 0.05
-    errors, y = utils.calculate_errors(x, bc, None, gt, model.iter_step,
+    errors, _ = utils.calculate_errors(x, bc, None, gt, model.iter_step,
                                        opt.n_evaluation_steps, starting_error,
                                        threshold)
     errors = errors[0].cpu().numpy()
-    print(utils.l2_error(y, gt))
-
     steps = np.nonzero(errors < threshold)[0][0]
     print('Steps:', steps)
 
@@ -53,6 +64,9 @@ def runtime(opt, model, data):
     end_t = time.time()
     t = end_t - start_t
     print('Time: {}'.format(t))
+    times.append(t)
+
+  return times
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir=None, logging=None)
@@ -82,7 +96,9 @@ def main():
   model.load(opt.ckpt_path, epoch)
   print('Checkpoint loaded from {}, epoch {}'.format(opt.ckpt_path, epoch))
   model.setup(is_train=False)
-  runtime(opt, model, data)
+  times = runtime(opt, model, data)
+
+  print('{} examples, {:.3f} sec'.format(len(times), sum(times)))
 
 if __name__ == '__main__':
   main()

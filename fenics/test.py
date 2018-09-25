@@ -21,9 +21,9 @@ class Top(SubDomain):
     def inside(self, x, on_boundary):
         return near(x[1], 1.0)
 
-def setup_solver(bc_vec, n_mesh):
+def setup_mesh(bc_vec, n_mesh):
   '''
-  Set up the solver.
+  Setup the mesh and boundaries.
   '''
   # Initialize sub-domain instances
   left = Left()
@@ -45,6 +45,13 @@ def setup_solver(bc_vec, n_mesh):
   left.mark(boundaries, 3)
   right.mark(boundaries, 4)
 
+  return mesh, boundaries
+
+def run_fenics(bc_vec, mesh, boundaries, n_iter, para_solver, para_precon):
+  '''
+  Run fenics for n_iter iterations.
+  Return the output x and the runtime t.
+  '''
   V = FunctionSpace(mesh, 'P', 1)
 
   # Define Dirichlet boundary conditions at four boundaries
@@ -64,13 +71,8 @@ def setup_solver(bc_vec, n_mesh):
   u = Function(V)
   problem = LinearVariationalProblem(a, L, u, bc)
   solver = LinearVariationalSolver(problem)
-  return mesh, u, solver
 
-def run_fenics(mesh, u, solver, n_iter, para_solver, para_precon):
-  '''
-  Run fenics for n_iter iterations.
-  Return the output x and the runtime t.
-  '''
+  # Solver parameters
   solver.parameters['krylov_solver']['monitor_convergence'] = False
   solver.parameters['krylov_solver']['error_on_nonconvergence'] = False
   solver.parameters['krylov_solver']['maximum_iterations'] = n_iter
@@ -96,26 +98,37 @@ def get_data(dset_path, max_temp):
   '''
   Get data.
   '''
-  bc = np.load(os.path.join(dset_path, 'bc.npy'))[0] / max_temp
-  frames = np.load(os.path.join(dset_path, 'frames', '0000.npy')) / max_temp
+  num = 50
+  n = num // 16 + 1
+  bc = np.load(os.path.join(dset_path, 'bc.npy'))[:n] / max_temp
+  bc = bc.reshape((-1, 4))[:num]
+
+  all_frames = []
+  for i in range(n):
+    frames = np.load(os.path.join(dset_path, 'frames', '{:04d}.npy'.format(i))) / max_temp
+    all_frames.append(frames)
+  frames = np.concatenate(all_frames, axis=0)[:num]
   data = {'bc': bc, 'x': frames[:, 0], 'final': frames[:, 1]}
   return data
 
 def rms(x, gt):
   return np.sqrt(((x - gt) ** 2).mean())
 
-def runtime(data, n_mesh):
+def runtime(data, n_mesh, threshold, para_solver, para_precon):
   '''
   Calculate runtime.
   '''
   n_evaluation_steps = 200
-  threshold = 0.05
-  # Parameters
-  para_solver = 'gmres'  # specify solver: gmres, cg, bicgstab
-  para_precon = 'amg'  # specify preconditioner
 
-#  batch_size = data['bc'].shape[0]
-  batch_size = 4
+  if para_precon == 'default':
+    n_iters = np.arange(40, 200, 5)
+  elif para_precon == 'amg':
+    n_iters = np.arange(1, 11)
+  else:
+    n_iters = np.arange(1, 21)
+
+  batch_size = data['bc'].shape[0]
+  times = []
   for i in range(batch_size):
     bc = data['bc'][i]
     gt = data['final'][i]
@@ -124,26 +137,26 @@ def runtime(data, n_mesh):
     x[1:-1, 1:-1] = 0
 
     # Set up
-    mesh, u, solver = setup_solver(bc, n_mesh)
+    mesh, boundaries = setup_mesh(bc, n_mesh)
 
     # Get ground truth
-    gt, _ = run_fenics(mesh, u, solver, 1000, para_solver, 'amg')
+    gt, _ = run_fenics(bc, mesh, boundaries, 1000, para_solver, 'amg')
 
     starting_error = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
-    print('###################################################################')
+    print('\n###################################################################')
     print('Starting error:', starting_error)
-    for n_iter in range(1, 20, 1):
-      x, t = run_fenics(mesh, u, solver, n_iter, para_solver, para_precon)
+    for n_iter in n_iters:
+      x, t = run_fenics(bc, mesh, boundaries, n_iter, para_solver, para_precon)
       e = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1]) / starting_error
-      print('Iters:', n_iter)
-      print('Error ratio:', e)
-      print('Time:', t)
+      print('Iters: {}, error: {:.3f}, time: {:.3f}'.format(n_iter, e, t))
       print('')
       if e < threshold:
+        times.append(t)
         break
+  return times
 
 def main():
-  n_mesh = 1024
+  n_mesh = 256
   size_str = '{}x{}'.format(n_mesh + 1, n_mesh + 1)
   dset_path = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/square', size_str)
   data = get_data(dset_path, 100)
@@ -152,7 +165,14 @@ def main():
   list_krylov_solver_preconditioners()
   print('')
 
-  runtime(data, n_mesh)
+  # Parameters
+  threshold = 0.05
+  para_solver = 'gmres'  # specify solver: gmres, cg, bicgstab
+  para_precon = 'default'  # specify preconditioner
+
+  times = runtime(data, n_mesh, threshold, para_solver, para_precon)
+  print(times)
+  print(len(times))
 
 if __name__ == '__main__':
   main()
