@@ -106,10 +106,16 @@ class HeatModel(BaseModel):
     starting_error = utils.l2_error(y, gt).cpu()
     results = {}
 
+    if self.iterator.name().startswith('UNet'):
+      # Unet, set threshold to be higher
+      threshold = 0.01
+    else:
+      threshold = 0.002
+
     if self.compare_model is not None:
       # Jacobi
       fd_errors, _ = utils.calculate_errors(x, bc, f, gt, self.compare_model.iter_step,
-                                            n_steps, starting_error)
+                                            n_steps, starting_error, threshold)
       results['Jacobi errors'] = fd_errors
 
     # error of model

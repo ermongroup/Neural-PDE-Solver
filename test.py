@@ -58,8 +58,6 @@ def check_eigenvalues(opt, model, logger, vis):
 
   if opt.iterator == 'conv':
     image_size = 15
-  elif opt.iterator == 'unet':
-    return # Too big
   else:
     raise NotImplementedError
   w, v = utils.calculate_eigenvalues(model, image_size)
@@ -94,7 +92,7 @@ def test(opt, model, data_loader, logger, vis=None):
   '''
   model.setup(is_train=False)
 
-  if opt.geometry == 'square':
+  if opt.geometry == 'square' and opt.iterator != 'unet':
     check_eigenvalues(opt, model, logger, vis)
 
     # Print model parameters
@@ -132,6 +130,7 @@ def main():
   opt.initialization = model_opt.initialization
   opt.iterator = model_opt.iterator
   data_loader = data.get_data_loader(opt)
+  print('####### Data Loaded ########')
 
   for epoch in opt.which_epochs:
     if epoch < 0:

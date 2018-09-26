@@ -11,6 +11,7 @@ def main():
   opt, logger, stats, vis = utils.build(is_train=True, tb_dir='tb_train')
   np.save(os.path.join(opt.ckpt_path, 'opt.npy'), opt)
   data_loader = get_data_loader(opt)
+  logger.print('Loading data from {}'.format(opt.dset_path))
   print('####### Data loaded #########')
   # Validation
   val_opt = copy.deepcopy(opt)
