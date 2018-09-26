@@ -39,7 +39,7 @@ def main():
       model.setup(is_train=False)
       # Find eigenvalues
       if opt.iterator != 'cg' and opt.iterator != 'unet':
-        w, _ = utils.calculate_eigenvalues(model, image_size=67)
+        w, _ = utils.calculate_eigenvalues(model, image_size=15)
         w = sorted(np.abs(w))
         eigenvalues = {'first': w[-2], 'second': w[-3], 'third': w[-4]}
         vis.add_scalar({'eigenvalues': eigenvalues}, epoch)

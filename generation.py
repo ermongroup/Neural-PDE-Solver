@@ -104,20 +104,18 @@ def generate_square(opt):
     x[:, 1:-1, 1:-1] = bc.mean(dim=1).view(-1, 1, 1)
 
     # Use Multigrid model to initialize
-    # TODO: Multigrid does not support Au = f yet.
-    if f is None:
-      if opt.image_size < 64:
-        depth = 2
-      elif opt.image_size < 512:
-        depth = 4
-      else:
-        depth = 6
-      model = MultigridIterator(depth, 8, 8) # Square geometry: use deeper multigrid
-      for i in range(100):
-        x = model.iter_step(x, bc, f)
-      error = utils.fd_error(x, bc, f)
-      largest_error = error.max().item()
-      print('largest error {}'.format(largest_error))
+    if opt.image_size < 64:
+      depth = 2
+    elif opt.image_size < 512:
+      depth = 4
+    else:
+      depth = 6
+    model = MultigridIterator(depth, 8, 8) # Square geometry: use deeper multigrid
+    for i in range(100):
+      x = model.iter_step(x, bc, f)
+    error = utils.fd_error(x, bc, f)
+    largest_error = error.max().item()
+    print('largest error {}'.format(largest_error))
 
     # Find solution
     frames = get_solution(x, bc, f)
@@ -169,16 +167,14 @@ def generate_geometry(opt):
       bc = bc.cuda()
 
     # Use Multigrid model to initialize
-    # TODO: Multigrid does not support Au = f yet.
-    if f is None:
-      model = MultigridIterator(4, 8, 8)
-      if opt.geometry != 'square':
-        model.is_bc_mask = True
-      for i in range(200):
-        x = model.iter_step(x, bc, f)
-      error = utils.fd_error(x, bc, f)
-      largest_error = error.max().item()
-      print('largest error {}'.format(largest_error))
+    model = MultigridIterator(4, 8, 8)
+    if opt.geometry != 'square':
+      model.is_bc_mask = True
+    for i in range(200):
+      x = model.iter_step(x, bc, f)
+    error = utils.fd_error(x, bc, f)
+    largest_error = error.max().item()
+    print('largest error {}'.format(largest_error))
 
     # Find solution
     frames = get_solution(x, bc, f)
