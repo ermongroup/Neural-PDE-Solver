@@ -134,11 +134,13 @@ def fd_error(x, bc, f, aggregate='max'):
 def l2_error(x, gt):
   '''
   Calculate L2 error (rms error).
-  x, gt: (H x W) or (batch_size x H x W)
+  x, gt: batch_size x H x W
   return a scalar loss.
   '''
+  if len(x.size()) != 3:
+    raise NotImplementedError
   diff = (x - gt) ** 2
-  error = diff.mean(dim=-1).mean(dim=-1)
+  error = diff.view(diff.size(0), -1).mean(dim=1)
   return torch.sqrt(error)
 
 def fd_iter(x, bc, error_threshold, max_iters=100000):
@@ -174,6 +176,7 @@ def calculate_errors(x, bc, f, gt, iter_func, n_steps, starting_error, threshold
       errors.append(zeros)
       break
     errors.append(e.unsqueeze(1))
+  print(i)
   errors = torch.cat(errors, dim=1)
   return errors, x
 

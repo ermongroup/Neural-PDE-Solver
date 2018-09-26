@@ -92,6 +92,7 @@ class UNetIterator(Iterator):
     x = x.unsqueeze(1)
     y = F.conv2d(x, self.fd_update_kernel)
     if f is not None:
+      f = f.unsqueeze(1)
       y = y - f[..., 1:-1, 1:-1]
 
     r = y - x[:, :, 1:-1, 1:-1]
