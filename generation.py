@@ -31,7 +31,7 @@ def get_solution(x, bc, f):
   '''
   frames = [x]
 
-  error_threshold = 0.0001
+  error_threshold = 0.0005
   max_iters = 8000
   # Iterate with Jacobi until ground truth
   for i in range(max_iters):
@@ -106,8 +106,14 @@ def generate_square(opt):
     # Use Multigrid model to initialize
     # TODO: Multigrid does not support Au = f yet.
     if f is None:
-      model = MultigridIterator(6, 8, 8) # Square geometry: use deeper multigrid
-      for i in range(200):
+      if opt.image_size < 64:
+        depth = 2
+      elif opt.image_size < 512:
+        depth = 4
+      else:
+        depth = 6
+      model = MultigridIterator(depth, 8, 8) # Square geometry: use deeper multigrid
+      for i in range(100):
         x = model.iter_step(x, bc, f)
       error = utils.fd_error(x, bc, f)
       largest_error = error.max().item()
