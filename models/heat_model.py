@@ -100,10 +100,12 @@ class HeatModel(BaseModel):
     gt = gt.cuda()
     if f is not None:
       f = f.cuda()
+
+    if utils.is_bc_mask(x, bc):
+      print('Initializing with zero')
+      x = utils.initialize(x, bc, 'zero')
     # Calculate starting error
-    y = x.clone()
-    y = utils.initialize(y, bc, 'zero')
-    starting_error = utils.l2_error(y, gt).cpu()
+    starting_error = utils.l2_error(x, gt).cpu()
     results = {}
 
     if self.iterator.name().startswith('UNet'):
@@ -119,7 +121,8 @@ class HeatModel(BaseModel):
       results['Jacobi errors'] = fd_errors
 
     # error of model
-    errors, x = utils.calculate_errors(x, bc, f, gt, self.iter_step, n_steps, starting_error)
+    errors, x = utils.calculate_errors(x, bc, f, gt, self.iter_step,
+                                       n_steps, starting_error, threshold)
     results['model errors'] = errors
 
     return results, x

@@ -20,7 +20,8 @@ parser.add_argument('--image_size', type=int, default=17)
 parser.add_argument('--max_temp', type=int, default=100)
 parser.add_argument('--poisson', type=int, default=0)
 parser.add_argument('--geometry', type=str, default='square',
-                    choices=['square', 'cylinders', 'Lshape'])
+                    choices=['square', 'cylinders', 'Lshape',
+                             'centered_cylinders', 'centered_Lshape'])
 
 np.random.seed(666)
 

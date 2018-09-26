@@ -13,7 +13,8 @@ class BaseArgs:
     self.parser.add_argument('--dset_dir', type=str, default=os.path.join(os.environ['HOME'], 'slowbro', 'PDE'))
     self.parser.add_argument('--dset_name', type=str, default='heat')
     self.parser.add_argument('--geometry', type=str, default='square',
-                             choices=['square', 'cylinders', 'Lshape'])
+                             choices=['square', 'cylinders', 'Lshape',
+                                       'centered_cylinders', 'centered_Lshape'])
     self.parser.add_argument('--poisson', type=int, default=0)
     self.parser.add_argument('--batch_size', type=int, default=4)
     self.parser.add_argument('--image_size', type=int, default=65)
