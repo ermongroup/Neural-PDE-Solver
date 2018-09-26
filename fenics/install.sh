@@ -5,3 +5,4 @@ printf "channels:\n - conda-forge\n - defaults\n" > ~/anaconda3/envs/fenics/.con
 exit 0
 source activate fenics
 conda install numpy fenics scipy matplotlib
+conda install -c conda-forge mshr

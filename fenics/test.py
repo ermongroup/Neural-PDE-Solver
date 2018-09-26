@@ -4,48 +4,10 @@ import os
 import time
 from dolfin.fem.solving import *
 
-# Create classes for defining parts of the boundaries
-class Left(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[0], 0.0)
+from setup import *
+from utils import *
 
-class Right(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[0], 1.0)
-
-class Bottom(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[1], 0.0)
-
-class Top(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[1], 1.0)
-
-def setup_mesh(bc_vec, n_mesh):
-  '''
-  Setup the mesh and boundaries.
-  '''
-  # Initialize sub-domain instances
-  left = Left()
-  top = Top()
-  right = Right()
-  bottom = Bottom()
-
-  # Create mesh and define function space
-  # Note: Fenics matplotlib support does not work with quadrilateral cells.
-  mesh = UnitSquareMesh.create(n_mesh, n_mesh, CellType.Type.quadrilateral)
-
-  # Initialize mesh function for boundary domains
-  boundaries = MeshFunction('size_t', mesh, mesh.topology().dim()-1)
-  boundaries.set_all(0)
-
-  # Note: Ordering is important!!
-  bottom.mark(boundaries, 1)
-  top.mark(boundaries, 2)
-  left.mark(boundaries, 3)
-  right.mark(boundaries, 4)
-
-  return mesh, boundaries
+np.random.seed(666)
 
 def run_fenics(bc_vec, mesh, boundaries, n_iter, para_solver, para_precon):
   '''
@@ -55,10 +17,9 @@ def run_fenics(bc_vec, mesh, boundaries, n_iter, para_solver, para_precon):
   V = FunctionSpace(mesh, 'P', 1)
 
   # Define Dirichlet boundary conditions at four boundaries
-  bc = [DirichletBC(V, bc_vec[0], boundaries, 1),
-        DirichletBC(V, bc_vec[1], boundaries, 2),
-        DirichletBC(V, bc_vec[2], boundaries, 3),
-        DirichletBC(V, bc_vec[3], boundaries, 4)]
+  bc = []
+  for i in range(len(bc_vec)):
+    bc.append(DirichletBC(V, bc_vec[i], boundaries, i))
 
   # Define variational problem
   u = TrialFunction(V)
@@ -71,6 +32,8 @@ def run_fenics(bc_vec, mesh, boundaries, n_iter, para_solver, para_precon):
   u = Function(V)
   problem = LinearVariationalProblem(a, L, u, bc)
   solver = LinearVariationalSolver(problem)
+  x = u.compute_vertex_values(mesh)
+  print('# points:', len(x))
 
   # Solver parameters
   solver.parameters['krylov_solver']['monitor_convergence'] = False
@@ -90,31 +53,9 @@ def run_fenics(bc_vec, mesh, boundaries, n_iter, para_solver, para_precon):
   t = end - start
 
   x = u.compute_vertex_values(mesh)
-  size = np.sqrt(len(x)).astype(int)
-  x = x.reshape((size, size))
   return x, t
 
-def get_data(dset_path, max_temp):
-  '''
-  Get data.
-  '''
-  num = 50
-  n = num // 16 + 1
-  bc = np.load(os.path.join(dset_path, 'bc.npy'))[:n] / max_temp
-  bc = bc.reshape((-1, 4))[:num]
-
-  all_frames = []
-  for i in range(n):
-    frames = np.load(os.path.join(dset_path, 'frames', '{:04d}.npy'.format(i))) / max_temp
-    all_frames.append(frames)
-  frames = np.concatenate(all_frames, axis=0)[:num]
-  data = {'bc': bc, 'x': frames[:, 0], 'final': frames[:, 1]}
-  return data
-
-def rms(x, gt):
-  return np.sqrt(((x - gt) ** 2).mean())
-
-def runtime(data, n_mesh, threshold, para_solver, para_precon):
+def runtime(geometry, boundary_conditions, n_mesh, threshold, para_solver, para_precon):
   '''
   Calculate runtime.
   '''
@@ -127,28 +68,26 @@ def runtime(data, n_mesh, threshold, para_solver, para_precon):
   else:
     n_iters = np.arange(1, 21)
 
-  batch_size = data['bc'].shape[0]
+  batch_size = boundary_conditions.shape[0]
   times = []
   for i in range(batch_size):
-    bc = data['bc'][i]
-    gt = data['final'][i]
-    x = data['x'][i]
-    # Initialize with 0
-    x[1:-1, 1:-1] = 0
+    print('\n###################################################################')
+    print(i)
+    bc = boundary_conditions[i]
 
     # Set up
-    mesh, boundaries = setup_mesh(bc, n_mesh)
+    if geometry == 'square':
+      mesh, boundaries = setup_grid(n_mesh)
+    else:
+      mesh, boundaries = setup_geometry(geometry, n_mesh)
 
     # Get ground truth
     gt, _ = run_fenics(bc, mesh, boundaries, 1000, para_solver, 'amg')
 
-    starting_error = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1])
-    print('\n###################################################################')
-    print(i)
-    print('Starting error:', starting_error)
+    starting_error = rms(gt, 0)
     for n_iter in n_iters:
       x, t = run_fenics(bc, mesh, boundaries, n_iter, para_solver, para_precon)
-      e = rms(x[1:-1, 1:-1], gt[1:-1, 1:-1]) / starting_error
+      e = rms(x, gt) / starting_error
       print('Iters: {}, error: {:.4f}, time: {:.3f}'.format(n_iter, e, t))
       print('')
       if e < threshold:
@@ -157,10 +96,20 @@ def runtime(data, n_mesh, threshold, para_solver, para_precon):
   return times
 
 def main():
-  n_mesh = 256
+#  geometry = 'centered_cylinders'
+  geometry = 'centered_Lshape'
+  num = 100
+
+  if geometry == 'square':
+    n_mesh = 256
+  elif geometry == 'centered_cylinders':
+    n_mesh = 180
+  elif geometry == 'centered_Lshape':
+    n_mesh = 200
+
   size_str = '{}x{}'.format(n_mesh + 1, n_mesh + 1)
-  dset_path = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/square', size_str)
-  data = get_data(dset_path, 100)
+  dset_path = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/', geometry, size_str)
+  boundary_conditions = get_boundary_conditions(geometry, num, dset_path, max_temp=100)
 
   list_linear_solver_methods()
   list_krylov_solver_preconditioners()
@@ -169,9 +118,9 @@ def main():
   # Parameters
   threshold = 0.01
   para_solver = 'gmres'  # specify solver: gmres, cg, bicgstab
-  para_precon = 'default'  # specify preconditioner
+  para_precon = 'amg'  # specify preconditioner
 
-  times = runtime(data, n_mesh, threshold, para_solver, para_precon)
+  times = runtime(geometry, boundary_conditions, n_mesh, threshold, para_solver, para_precon)
   print('Threshold: {}'.format(threshold))
   print('{} examples, {:.3f} sec'.format(len(times), sum(times)))
 
