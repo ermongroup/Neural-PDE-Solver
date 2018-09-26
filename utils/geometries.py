@@ -90,8 +90,8 @@ def Lshape(image_size):
   '''
   Return L-shape geometry.
   '''
-  x = np.random.randint(image_size // 8 * 3, image_size // 8 * 5)
-  y = np.random.randint(image_size // 8 * 3, image_size // 8 * 5)
+  x = np.random.randint(image_size // 8 * 3, image_size // 2)
+  y = np.random.randint(image_size // 8 * 3, image_size // 2)
   temperatures = np.concatenate([np.random.uniform(0.5, 1, size=2),
                                  np.random.uniform(0, 0.5, size=2)])
 
