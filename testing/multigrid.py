@@ -53,7 +53,7 @@ def test_subsampling_poisson(x, gt, bc, f):
   x_sub = x
   f_sub = f
   for i in range(3):
-    f_sub = utils.subsample(f)
+    f_sub = 4 * utils.subsample(f)
     x_sub = utils.restriction(x, bc)
     r_sub = F.conv2d(x_sub.unsqueeze(1), A).squeeze(1)
     r_sub = utils.pad_boundary(r_sub, torch.zeros(1, 4)) - f_sub

@@ -44,7 +44,7 @@ class MultigridIterator(Iterator):
     if step > 1:
       # Downsample
       if f is not None:
-        f_sub = utils.subsample(f)
+        f_sub = 4 * utils.subsample(f)
       else:
         f_sub = None
 

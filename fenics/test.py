@@ -105,7 +105,7 @@ def main():
   elif geometry == 'centered_cylinders':
     n_mesh = 180
   elif geometry == 'centered_Lshape':
-    n_mesh = 200
+    n_mesh = 230
 
   size_str = '{}x{}'.format(n_mesh + 1, n_mesh + 1)
   dset_path = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/', geometry, size_str)
