@@ -6,6 +6,10 @@ def get_geometry(geometry, image_size, batch_size, max_temp):
     geom = cylinders
   elif geometry == 'Lshape':
     geom = Lshape
+  elif geometry == 'centered_cylinders':
+    geom = centered_cylinders
+  elif geometry == 'centered_Lshape':
+    geom = centered_Lshape
   else:
     raise NotImplementedError
 
@@ -32,9 +36,6 @@ def cylinders(image_size):
   x = np.zeros((image_size, image_size)).astype(np.uint8)
   x = cv2.circle(x, (c, c), r1, 255, -1) / 255
   outer = 1 - x
-  # Outer shell
-#  y = cv2.circle(np.zeros_like(x), (c, c), r1 + 3, 255, -1) / 255
-#  outer_shell = y - x
 
   # Inner cylinder
   center = np.random.randint(-r2 * 1, r2 * 1 + 1, size=2) + c
@@ -55,6 +56,34 @@ def cylinders(image_size):
   # Initialize
   x = np.zeros_like(x)
   x = bc + (1 - bc_mask) * (v1 + v2 + 1) / 3
+  return x, bc, bc_mask
+
+def centered_cylinders(image_size):
+  '''
+  Return geometry of *centered* inner and outer cylinders.
+  '''
+  c = (image_size + 1) // 2
+  r1 = (image_size - 7) // 2
+  r2 = int(r1 / 4)
+
+  # Outer cylinder
+  x = np.zeros((image_size, image_size)).astype(np.uint8)
+  x = cv2.circle(x, (c, c), r1, 255, -1) / 255
+  outer = 1 - x
+
+  # Inner cylinder
+  inner = cv2.circle(np.zeros_like(x), (c, c), r2, 255, -1) / 255
+
+  bc_mask = inner + outer
+  assert np.all(np.logical_or(bc_mask == 0, bc_mask == 1))
+
+  # Boundary values
+  v = np.random.uniform(0.2, 0.8)
+  bc = outer * v + inner * 1.0
+
+  # Initialize
+  x = np.zeros_like(x)
+  x = bc + (1 - bc_mask) * (v + 1) / 3
   return x, bc, bc_mask
 
 def Lshape(image_size):
@@ -95,5 +124,39 @@ def Lshape(image_size):
     x = np.rot90(x, k).copy()
     bc_values = np.rot90(bc_values, k).copy()
     bc_mask = np.rot90(bc_mask, k).copy()
+
+  return x, bc_values, bc_mask
+
+def centered_Lshape(image_size):
+  '''
+  Return *centered* L-shape geometry.
+  '''
+  x = (image_size + 1) // 2
+  y = x
+  temperatures = np.concatenate([np.random.uniform(0.5, 1, size=2),
+                                 np.random.uniform(0, 0.5, size=2)])
+
+  bc_mask = np.zeros((image_size, image_size))
+  bc_mask[:x, :y] = 1
+  bc_mask[0, :] = 1
+  bc_mask[-1, :] = 1
+  bc_mask[:, 0] = 1
+  bc_mask[:, -1] = 1
+
+  bc_values = np.zeros((image_size, image_size))
+  bc_values[0, :] = temperatures[0]
+  bc_values[:, 0] = temperatures[1]
+  bc_values[-1, :] = temperatures[2]
+  bc_values[:, -1] = temperatures[3]
+  # Upper corner
+  for i in range(x):
+    for j in range(y):
+      if i != 0 and j / i < y / x:
+        bc_values[i, j] = temperatures[1]
+      else:
+        bc_values[i, j] = temperatures[0]
+
+  x = np.ones((image_size, image_size)) * temperatures.mean()
+  x = x * (1 - bc_mask) + bc_values
 
   return x, bc_values, bc_mask
