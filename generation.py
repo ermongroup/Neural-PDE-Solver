@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 import utils
 from models.iterators import MultigridIterator
+from models.heat_model import HeatModel
 
 parser = argparse.ArgumentParser()
 
@@ -30,13 +31,13 @@ def setup_model(opt):
   '''
   Setup the model to initialize the Jacobi solver.
   '''
+  use_trained_model = True # Set accordingly
   if opt.image_size < 64:
     depth = 2
     model = MultigridIterator(depth, 8, 8)
   elif opt.image_size < 1024:
-    if 1: # Set accordingly
+    if use_trained_model:
       # Load pretrained UNet model
-      from models.heat_model import HeatModel
       model_path = os.path.join(os.environ['HOME'],
                                 'slowbro/ckpt/heat/65x65/unet344_random_iter20_0_gt0_adam1e-03')
       model_opt = np.load(os.path.join(model_path, 'opt.npy')).item()
@@ -49,8 +50,19 @@ def setup_model(opt):
       depth = 4
       model = MultigridIterator(depth, 8, 8)
   else:
-    depth = 6
-    model = MultigridIterator(depth, 8, 8)
+    if use_trained_model:
+      # Load pretrained UNet model
+      model_path = os.path.join(os.environ['HOME'],
+                                'slowbro/ckpt/heat/257x257/unet544_random_iter20_0_gt0_adam1e-03')
+      model_opt = np.load(os.path.join(model_path, 'opt.npy')).item()
+      model_opt.is_train = False
+      model_opt.geometry = opt.geometry
+      model = HeatModel(model_opt)
+      model.load(model_path, 19)
+      print('Model loaded from {}'.format(model_path))
+    else:
+      depth = 6
+      model = MultigridIterator(depth, 8, 8)
   if opt.geometry != 'square':
     model.is_bc_mask = True
   return model
