@@ -26,16 +26,30 @@ parser.add_argument('--geometry', type=str, default='square',
 np.random.seed(666)
 
 
-def setup_model(geometry):
-  from models.heat_model import HeatModel
-  model_path = os.path.join(os.environ['HOME'],
-                            'slowbro/ckpt/heat/65x65/unet344_random_iter20_0_gt0_adam1e-03')
-  model_opt = np.load(os.path.join(model_path, 'opt.npy')).item()
-  model_opt.is_train = False
-  model_opt.geometry = geometry
-  model = HeatModel(model_opt)
-  model.load(model_path, 19)
-  print('Model loaded from {}'.format(model_path))
+def setup_model(opt):
+  if opt.image_size < 64:
+    depth = 2
+    model = MultigridIterator(depth, 8, 8)
+  elif opt.image_size < 1024:
+    if 1: # Set accordingly
+      # Load pretrained UNet model
+      from models.heat_model import HeatModel
+      model_path = os.path.join(os.environ['HOME'],
+                                'slowbro/ckpt/heat/65x65/unet344_random_iter20_0_gt0_adam1e-03')
+      model_opt = np.load(os.path.join(model_path, 'opt.npy')).item()
+      model_opt.is_train = False
+      model_opt.geometry = opt.geometry
+      model = HeatModel(model_opt)
+      model.load(model_path, 19)
+      print('Model loaded from {}'.format(model_path))
+    else:
+      depth = 4
+      model = MultigridIterator(depth, 8, 8)
+  else:
+    depth = 6
+    model = MultigridIterator(depth, 8, 8)
+  if opt.geometry != 'square':
+    model.is_bc_mask = True
   return model
 
 def get_solution(x, bc, f):
@@ -44,7 +58,7 @@ def get_solution(x, bc, f):
   '''
   frames = [x]
 
-  error_threshold = 0.0001
+  error_threshold = 0.00001
   max_iters = 8000
   # Iterate with Jacobi until ground truth
   for i in range(max_iters):
@@ -98,16 +112,8 @@ def generate_square(opt):
   # Save opt
   np.save(os.path.join(opt.save_dir, 'opt.npy'), opt)
 
-  # Use Multigrid model to initialize
-  if opt.image_size < 64:
-    depth = 2
-    model = MultigridIterator(depth, 8, 8)
-  elif opt.image_size < 512:
-    depth = 4
-    model = setup_model('square')
-  else:
-    depth = 6
-    model = MultigridIterator(depth, 8, 8)
+  # Setup Multigrid model
+  model = setup_model(opt)
 
   for run in range(opt.n_runs):
     x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size)
@@ -128,7 +134,7 @@ def generate_square(opt):
     # Initialize with average of boundary conditions
     x[:, 1:-1, 1:-1] = bc.mean(dim=1).view(-1, 1, 1)
 
-    # Use model to initialize
+    # Use Multigrid model to initialize
     for i in range(400):
       x = model.iter_step(x, bc, f).detach()
     error = utils.fd_error(x, bc, f)
@@ -167,6 +173,7 @@ def generate_square(opt):
 def generate_geometry(opt):
   '''
   Generate data with geometry.
+  Multiply max_temp in the end!
   '''
   assert opt.poisson == 0 # f = 0 for now
   opt.save_dir = os.path.join(opt.save_dir, opt.geometry,
@@ -176,9 +183,12 @@ def generate_geometry(opt):
   # Save opt
   np.save(os.path.join(opt.save_dir, 'opt.npy'), opt)
 
+  # Setup Multigrid model
+  model = setup_model(opt)
+
   for run in range(opt.n_runs):
     x, bc_values, bc_mask = utils.get_geometry(opt.geometry, opt.image_size,
-                                               opt.batch_size, opt.max_temp)
+                                               opt.batch_size, 1)
     bc = np.stack([bc_values, bc_mask], axis=1) # batch_size x 2 x image_size x image_size
     x = torch.Tensor(x)
     bc = torch.Tensor(bc)
@@ -188,11 +198,8 @@ def generate_geometry(opt):
       bc = bc.cuda()
 
     # Use Multigrid model to initialize
-    model = MultigridIterator(4, 8, 8)
-    if opt.geometry != 'square':
-      model.is_bc_mask = True
-    for i in range(200):
-      x = model.iter_step(x, bc, f)
+    for i in range(400):
+      x = model.iter_step(x, bc, f).detach()
     error = utils.fd_error(x, bc, f)
     largest_error = error.max().item()
     print('largest error {}'.format(largest_error))
@@ -203,6 +210,7 @@ def generate_geometry(opt):
     # Add bc and mask
     data = np.concatenate([frames, bc_values[:, np.newaxis, :, :],
                            bc_mask[:, np.newaxis, :, :]], axis=1)
+    data *= opt.max_temp
     np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), data)
     print('Run {} saved.'.format(run))
 

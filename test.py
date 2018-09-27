@@ -113,7 +113,11 @@ def test(opt, model, data_loader, logger, vis=None):
   # Test for all geometries.
   # avg initialization
   opt.initialization = 'avg'
-  evaluate(opt, model, data_loader, logger, vis=vis)
+  if opt.poisson:
+    threshold = 0.1
+  else:
+    threshold = 0.01
+  evaluate(opt, model, data_loader, logger, threshold, vis=vis)
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')
