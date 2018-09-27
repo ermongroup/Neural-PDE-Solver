@@ -26,13 +26,25 @@ parser.add_argument('--geometry', type=str, default='square',
 np.random.seed(666)
 
 
+def setup_model(geometry):
+  from models.heat_model import HeatModel
+  model_path = os.path.join(os.environ['HOME'],
+                            'slowbro/ckpt/heat/65x65/unet344_random_iter20_0_gt0_adam1e-03')
+  model_opt = np.load(os.path.join(model_path, 'opt.npy')).item()
+  model_opt.is_train = False
+  model_opt.geometry = geometry
+  model = HeatModel(model_opt)
+  model.load(model_path, 19)
+  print('Model loaded from {}'.format(model_path))
+  return model
+
 def get_solution(x, bc, f):
   '''
   Iterate until error is below a threshold.
   '''
   frames = [x]
 
-  error_threshold = 0.0005
+  error_threshold = 0.0001
   max_iters = 8000
   # Iterate with Jacobi until ground truth
   for i in range(max_iters):
@@ -68,6 +80,7 @@ def get_heat_source(image_size, batch_size):
 def generate_square(opt):
   '''
   Generate data with square boundary conditions.
+  Multiply max_temp in the end!
   '''
   if opt.poisson:
     dir_name = 'poisson_{}x{}'.format(opt.image_size, opt.image_size)
@@ -78,20 +91,31 @@ def generate_square(opt):
   os.makedirs(frame_dir, exist_ok=True)
 
   # shape: n_runs x batch_size x 4
-  boundary_conditions = np.random.rand(opt.n_runs, opt.batch_size, 4) * opt.max_temp
+  boundary_conditions = np.random.rand(opt.n_runs, opt.batch_size, 4)
   if opt.poisson:
     # Lower temperature
     boundary_conditions *= 0.75
   # Save opt
   np.save(os.path.join(opt.save_dir, 'opt.npy'), opt)
 
+  # Use Multigrid model to initialize
+  if opt.image_size < 64:
+    depth = 2
+    model = MultigridIterator(depth, 8, 8)
+  elif opt.image_size < 512:
+    depth = 4
+    model = setup_model('square')
+  else:
+    depth = 6
+    model = MultigridIterator(depth, 8, 8)
+
   for run in range(opt.n_runs):
-    x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size) * opt.max_temp
+    x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size)
     bc = boundary_conditions[run]
     x = utils.set_boundary(x, bc)
     original_x = x.copy()[:, np.newaxis, :, :]
     if opt.poisson:
-      f = get_heat_source(opt.image_size, opt.batch_size) * opt.max_temp
+      f = get_heat_source(opt.image_size, opt.batch_size)
     else:
       f = None
 
@@ -104,16 +128,9 @@ def generate_square(opt):
     # Initialize with average of boundary conditions
     x[:, 1:-1, 1:-1] = bc.mean(dim=1).view(-1, 1, 1)
 
-    # Use Multigrid model to initialize
-    if opt.image_size < 64:
-      depth = 2
-    elif opt.image_size < 512:
-      depth = 4
-    else:
-      depth = 6
-    model = MultigridIterator(depth, 8, 8) # Square geometry: use deeper multigrid
-    for i in range(100):
-      x = model.iter_step(x, bc, f)
+    # Use model to initialize
+    for i in range(400):
+      x = model.iter_step(x, bc, f).detach()
     error = utils.fd_error(x, bc, f)
     largest_error = error.max().item()
     print('largest error {}'.format(largest_error))
@@ -129,19 +146,22 @@ def generate_square(opt):
       frames = np.concatenate([frames, f], axis=1)
       # Check values < 1
       max_value = frames.reshape((opt.batch_size, 3, opt.image_size ** 2))[:, 1, :]\
-                    .max(axis=1) / opt.max_temp
+                    .max(axis=1)
       scaling = np.ones(opt.batch_size)
       scaling[max_value >= 1] = 0.99 / max_value[max_value >= 1]
       # Scale the ones that has values > 1
       frames *= scaling[:, np.newaxis, np.newaxis, np.newaxis]
       boundary_conditions[run] *= scaling[:, np.newaxis]
 
-    assert np.all(frames[:, 1, :, :] <= opt.max_temp + 1e-5)
+    assert np.all(frames[:, 1, :, :] <= 1 + 1e-5)
+
+    frames = frames * opt.max_temp
 
     np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), frames)
     print('Run {} saved.'.format(run))
 
   # Save boundaries
+  boundary_conditions *= opt.max_temp
   np.save(os.path.join(opt.save_dir, 'bc.npy'), boundary_conditions)
 
 def generate_geometry(opt):

@@ -7,7 +7,7 @@ import data
 import utils
 from models.heat_model import HeatModel
 
-def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
+def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None, vis=None):
   '''
   Loop through the dataset and calculate evaluation metrics.
   '''
@@ -33,8 +33,12 @@ def evaluate(opt, model, data_loader, logger, error_threshold=0.05, limit=None):
 
     if step % opt.log_every == 0:
       img = utils.plot_error_curves(results, num=4)
+      if vis is not None:
+        vis.add_image({'errors_avg_init': img}, step)
       images['error_curves'].append(img)
       img = utils.plot_results({'x': x, 'gt': gt})
+      if vis is not None:
+        vis.add_image({'results': img}, step)
       images['results'].append(img)
     if (step + 1) % opt.log_every == 0:
       print('Step {}'.format(step + 1))
@@ -109,12 +113,7 @@ def test(opt, model, data_loader, logger, vis=None):
   # Test for all geometries.
   # avg initialization
   opt.initialization = 'avg'
-  results, images = evaluate(opt, model, data_loader, logger)
-  if vis is not None:
-    for i, img in enumerate(images['error_curves']):
-      vis.add_image({'errors_avg_init': img}, i)
-    for i, img in enumerate(images['results']):
-      vis.add_image({'results': img}, i)
+  evaluate(opt, model, data_loader, logger, vis=vis)
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir='tb_val')
