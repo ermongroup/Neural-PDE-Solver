@@ -27,6 +27,9 @@ np.random.seed(666)
 
 
 def setup_model(opt):
+  '''
+  Setup the model to initialize the Jacobi solver.
+  '''
   if opt.image_size < 64:
     depth = 2
     model = MultigridIterator(depth, 8, 8)
@@ -60,15 +63,21 @@ def get_solution(x, bc, f):
 
   error_threshold = 0.00001
   max_iters = 8000
-  # Iterate with Jacobi until ground truth
-  for i in range(max_iters):
-    x = utils.fd_step(x, bc, f)
-    error = utils.fd_error(x, bc, f)
-    if (i + 1) % 100 == 0:
-      largest_error = error.max().item() # largest error in the batch
-      print('Iter {}: largest error {}'.format(i + 1, largest_error))
-      if largest_error < error_threshold:
-        break
+
+  error = utils.fd_error(x, bc, f)
+  largest_error = error.max().item()
+  print('largest error {}'.format(largest_error))
+  if largest_error >= error_threshold:
+    # Iterate with Jacobi until ground truth
+    for i in range(max_iters):
+      x = utils.fd_step(x, bc, f)
+      error = utils.fd_error(x, bc, f)
+      if (i + 1) % 100 == 0:
+        largest_error = error.max().item() # largest error in the batch
+        print('Iter {}: largest error {}'.format(i + 1, largest_error))
+        if largest_error < error_threshold:
+          break
+
   # Add ground truth to frames
   y = x.cpu().numpy()
   frames.append(y)
@@ -137,9 +146,6 @@ def generate_square(opt):
     # Use Multigrid model to initialize
     for i in range(400):
       x = model.iter_step(x, bc, f).detach()
-    error = utils.fd_error(x, bc, f)
-    largest_error = error.max().item()
-    print('largest error {}'.format(largest_error))
 
     # Find solution
     frames = get_solution(x, bc, f)
@@ -191,6 +197,7 @@ def generate_geometry(opt):
                                                opt.batch_size, 1)
     bc = np.stack([bc_values, bc_mask], axis=1) # batch_size x 2 x image_size x image_size
     x = torch.Tensor(x)
+    original_x = x.numpy().copy()[:, np.newaxis, :, :]
     bc = torch.Tensor(bc)
     f = None
     if torch.cuda.is_available():
@@ -200,17 +207,15 @@ def generate_geometry(opt):
     # Use Multigrid model to initialize
     for i in range(400):
       x = model.iter_step(x, bc, f).detach()
-    error = utils.fd_error(x, bc, f)
-    largest_error = error.max().item()
-    print('largest error {}'.format(largest_error))
 
     # Find solution
     frames = get_solution(x, bc, f)
     assert frames.shape[1] == 2
     # Add bc and mask
-    data = np.concatenate([frames, bc_values[:, np.newaxis, :, :],
+    data = np.concatenate([original_x, frames[:, 1:2],
+                           bc_values[:, np.newaxis, :, :],
                            bc_mask[:, np.newaxis, :, :]], axis=1)
-    data *= opt.max_temp
+    data[:, :3] *= opt.max_temp
     np.save(os.path.join(frame_dir, '{:04d}.npy'.format(run)), data)
     print('Run {} saved.'.format(run))
 
