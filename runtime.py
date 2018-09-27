@@ -7,24 +7,35 @@ import torch
 import utils
 from models.heat_model import HeatModel
 
-def get_data(dset_path, max_temp):
+def get_data(geometry, num, dset_path, max_temp):
   '''
   Get data.
   '''
-  num = 50
   n = num // 16 + 1
-  bc = np.load(os.path.join(dset_path, 'bc.npy'))[:n] / max_temp
-  bc = bc.reshape((-1, 4))[:num]
+  if geometry == 'square':
+    bc = np.load(os.path.join(dset_path, 'bc.npy'))[:n] / max_temp
+    bc = bc.reshape((-1, 4))[:num]
 
-  all_frames = []
-  for i in range(n):
-    frames = np.load(os.path.join(dset_path, 'frames', '{:04d}.npy'.format(i))) / max_temp
-    all_frames.append(frames)
-  frames = np.concatenate(all_frames, axis=0)[:num]
+    all_frames = []
+    for i in range(n):
+      frames = np.load(os.path.join(dset_path, 'frames', '{:04d}.npy'.format(i))) / max_temp
+      all_frames.append(frames)
+    frames = np.concatenate(all_frames, axis=0)[:num]
 
-  bc = torch.Tensor(bc)
-  frames = torch.Tensor(frames)
-  data = {'bc': bc, 'x': frames[:, 0], 'final': frames[:, 1]}
+    bc = torch.Tensor(bc)
+    frames = torch.Tensor(frames)
+    data = {'bc': bc, 'x': frames[:, 0], 'final': frames[:, 1]}
+
+  else:
+    all_frames = []
+    for i in range(n):
+      frames = np.load(os.path.join(dset_path, 'frames', '{:04d}.npy'.format(i)))
+      frames[:, :3] /= max_temp
+      all_frames.append(frames)
+    frames = np.concatenate(all_frames, axis=0)[:num]
+    frames = torch.Tensor(frames)
+    data = {'bc': frames[:, 2:], 'x': frames[:, 0], 'final': frames[:, 1]}
+
   return data
 
 def runtime(opt, model, data):
@@ -42,9 +53,11 @@ def runtime(opt, model, data):
       bc = bc.cuda()
       gt = gt.cuda()
       x = x.cuda()
+
     # Initialize with zeros and calculate starting_error
-    x = utils.initialize(x, bc, 'zero')
-    starting_error = utils.l2_error(x, gt).cpu()
+    y = x.clone()
+    y = utils.initialize(y, bc, 'zero')
+    starting_error = utils.l2_error(y, gt).cpu()
 
     # Initialize
     x = utils.initialize(x, bc, opt.initialization)
@@ -70,7 +83,6 @@ def runtime(opt, model, data):
 
 def main():
   opt, logger, stats, vis = utils.build(is_train=False, tb_dir=None, logging=None)
-  assert opt.geometry == 'square'
   # Load model opt
   model_opt = np.load(os.path.join(opt.ckpt_path, 'opt.npy')).item()
   model_opt.is_train = False
@@ -83,7 +95,7 @@ def main():
   opt.iterator = model_opt.iterator
 
   # Get data
-  data = get_data(opt.dset_path, opt.max_temp)
+  data = get_data(opt.geometry, 100, opt.dset_path, opt.max_temp)
 
   epoch = opt.which_epochs[0]
   if epoch < 0:

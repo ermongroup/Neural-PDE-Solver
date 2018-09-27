@@ -68,18 +68,18 @@ def runtime(geometry, boundary_conditions, n_mesh, threshold, para_solver, para_
   else:
     n_iters = np.arange(1, 21)
 
+  # Set up
+  if geometry == 'square':
+    mesh, boundaries = setup_grid(n_mesh)
+  else:
+    mesh, boundaries = setup_geometry(geometry, n_mesh)
+
   batch_size = boundary_conditions.shape[0]
   times = []
   for i in range(batch_size):
     print('\n###################################################################')
     print(i)
     bc = boundary_conditions[i]
-
-    # Set up
-    if geometry == 'square':
-      mesh, boundaries = setup_grid(n_mesh)
-    else:
-      mesh, boundaries = setup_geometry(geometry, n_mesh)
 
     # Get ground truth
     gt, _ = run_fenics(bc, mesh, boundaries, 1000, para_solver, 'amg')
@@ -89,15 +89,16 @@ def runtime(geometry, boundary_conditions, n_mesh, threshold, para_solver, para_
       x, t = run_fenics(bc, mesh, boundaries, n_iter, para_solver, para_precon)
       e = rms(x, gt) / starting_error
       print('Iters: {}, error: {:.4f}, time: {:.3f}'.format(n_iter, e, t))
-      print('')
       if e < threshold:
         times.append(t)
+        print('Total time: {:.4f}'.format(sum(times)))
         break
   return times
 
 def main():
-#  geometry = 'centered_cylinders'
-  geometry = 'centered_Lshape'
+#  geometry = 'square'
+#  geometry = 'centered_Lshape'
+  geometry = 'centered_cylinders'
   num = 100
 
   if geometry == 'square':
