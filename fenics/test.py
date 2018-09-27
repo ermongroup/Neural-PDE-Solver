@@ -96,10 +96,11 @@ def runtime(geometry, boundary_conditions, n_mesh, threshold, para_solver, para_
   return times
 
 def main():
-#  geometry = 'square'
+  geometry = 'square'
 #  geometry = 'centered_Lshape'
-  geometry = 'centered_cylinders'
+#  geometry = 'centered_cylinders'
   num = 100
+  scale = 4
 
   if geometry == 'square':
     n_mesh = 256
@@ -107,6 +108,7 @@ def main():
     n_mesh = 180
   elif geometry == 'centered_Lshape':
     n_mesh = 230
+  n_mesh *= scale
 
   size_str = '{}x{}'.format(n_mesh + 1, n_mesh + 1)
   dset_path = os.path.join(os.environ['HOME'], 'slowbro/PDE/heat/', geometry, size_str)

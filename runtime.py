@@ -67,6 +67,9 @@ def runtime(opt, model, data):
                                        opt.n_evaluation_steps, starting_error,
                                        threshold)
     errors = errors[0].cpu().numpy()
+    if np.all(errors >= threshold):
+      print('Skip')
+      continue
     steps = np.nonzero(errors < threshold)[0][0]
     print('Steps:', steps)
 
@@ -95,7 +98,8 @@ def main():
   opt.iterator = model_opt.iterator
 
   # Get data
-  data = get_data(opt.geometry, 100, opt.dset_path, opt.max_temp)
+  num = 100
+  data = get_data(opt.geometry, num, opt.dset_path, opt.max_temp)
 
   epoch = opt.which_epochs[0]
   if epoch < 0:
@@ -111,6 +115,7 @@ def main():
   times = runtime(opt, model, data)
 
   print('{} examples, {:.3f} sec'.format(len(times), sum(times)))
+  print('Adjusted time: {:.3f} sec'.format(np.mean(times) * num))
 
 if __name__ == '__main__':
   main()
