@@ -23,6 +23,8 @@ parser.add_argument('--poisson', type=int, default=0)
 parser.add_argument('--geometry', type=str, default='square',
                     choices=['square', 'cylinders', 'Lshape',
                              'centered_cylinders', 'centered_Lshape'])
+parser.add_argument('--use_model', type=int, default=1,
+                    help='Use Multigrid or pretrained model to initialize.')
 
 np.random.seed(666)
 
@@ -133,8 +135,9 @@ def generate_square(opt):
   # Save opt
   np.save(os.path.join(opt.save_dir, 'opt.npy'), opt)
 
-  # Setup Multigrid model
-  model = setup_model(opt)
+  if opt.use_model:
+    # Setup Multigrid model
+    model = setup_model(opt)
 
   for run in range(opt.n_runs):
     x = np.random.rand(opt.batch_size, opt.image_size, opt.image_size)
@@ -155,9 +158,10 @@ def generate_square(opt):
     # Initialize with average of boundary conditions
     x[:, 1:-1, 1:-1] = bc.mean(dim=1).view(-1, 1, 1)
 
-    # Use Multigrid model to initialize
-    for i in range(400):
-      x = model.iter_step(x, bc, f).detach()
+    if opt.use_model:
+      # Use Multigrid model to initialize
+      for i in range(400):
+        x = model.iter_step(x, bc, f).detach()
 
     # Find solution
     frames = get_solution(x, bc, f)
@@ -201,8 +205,9 @@ def generate_geometry(opt):
   # Save opt
   np.save(os.path.join(opt.save_dir, 'opt.npy'), opt)
 
-  # Setup Multigrid model
-  model = setup_model(opt)
+  if opt.use_model:
+    # Setup Multigrid model
+    model = setup_model(opt)
 
   for run in range(opt.n_runs):
     x, bc_values, bc_mask = utils.get_geometry(opt.geometry, opt.image_size,
@@ -216,9 +221,10 @@ def generate_geometry(opt):
       x = x.cuda()
       bc = bc.cuda()
 
-    # Use Multigrid model to initialize
-    for i in range(400):
-      x = model.iter_step(x, bc, f).detach()
+    if opt.use_model:
+      # Use Multigrid model to initialize
+      for i in range(400):
+        x = model.iter_step(x, bc, f).detach()
 
     # Find solution
     frames = get_solution(x, bc, f)
@@ -233,6 +239,7 @@ def generate_geometry(opt):
 
 if __name__ == '__main__':
   opt = parser.parse_args()
+  assert (opt.image_size - 1) % 16 == 0, 'image_size must be 2^n + 1'
   if opt.geometry == 'square':
     generate_square(opt)
   else:
