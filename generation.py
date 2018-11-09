@@ -172,16 +172,19 @@ def generate_square(opt):
       # Concatenate f to frames.
       f = f.cpu().numpy()[:, np.newaxis, :, :]
       frames = np.concatenate([frames, f], axis=1)
-      # Check values < 1
-      max_value = frames.reshape((opt.batch_size, 3, opt.image_size ** 2))[:, 1, :]\
-                    .max(axis=1)
-      scaling = np.ones(opt.batch_size)
-      scaling[max_value >= 1] = 0.99 / max_value[max_value >= 1]
+
+    # Check that values < 1
+    max_value = frames.reshape((opt.batch_size, -1, opt.image_size ** 2))[:, 1, :]\
+                  .max(axis=1)
+    scaling = np.ones(opt.batch_size)
+    eps = 1e-6
+    if np.any(max_value > 1 + eps):
       # Scale the ones that has values > 1
+      scaling[max_value > 1 + eps] = 0.99 / max_value[max_value > 1 + eps]
       frames *= scaling[:, np.newaxis, np.newaxis, np.newaxis]
       boundary_conditions[run] *= scaling[:, np.newaxis]
 
-    assert np.all(frames[:, 1, :, :] <= 1 + 1e-5)
+    assert np.all(frames[:, :2, :, :] <= 1 + eps)
 
     frames = frames * opt.max_temp
 

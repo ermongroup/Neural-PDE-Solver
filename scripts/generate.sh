@@ -1,8 +1,8 @@
 #!/bin/bash
-CUDA_VISIBLE_DEVICES=3 \
+CUDA_VISIBLE_DEVICES=0 \
 python generation.py \
-  --image_size 257 \
+  --image_size 513 \
   --save_every 1 \
   --geometry square \
-  --poisson 1 \
+  --poisson 0 \
   --n_runs 200
